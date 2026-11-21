@@ -1,0 +1,1770 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#007A63">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Suivi Portefeuilles">
+    <title>Suivi des portefeuilles — Entrées & Sorties</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Police Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Manifeste PWA embarqué -->
+    <script>
+        (function initManifest() {
+            const manifest = {
+                name: "Suivi des portefeuilles",
+                short_name: "Portefeuilles",
+                description: "Suivi personnel des entrées et sorties PEA, Linxea, PER, Crypto",
+                start_url: ".",
+                display: "standalone",
+                background_color: "#F4F6F5",
+                theme_color: "#007A63",
+                icons: [
+                    {
+                        src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23007A63'/%3E%3Cpath d='M25 65h10V45H25v20zm20 0h10V30H45v35zm20 0h10V52H65v13z' fill='white'/%3E%3C/svg%3E",
+                        sizes: "192x192",
+                        type: "image/svg+xml"
+                    }
+                ]
+            };
+            const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = URL.createObjectURL(blob);
+            document.head.appendChild(link);
+        })();
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #F4F6F5;
+            color: #111827;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        @keyframes cardFadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .card-animate {
+            animation: cardFadeIn 0.2s ease-out forwards;
+        }
+
+        @keyframes spinIcon {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spin-refresh {
+            animation: spinIcon 0.8s linear infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col pb-24">
+
+    <!-- ==================== EN-TÊTE ==================== -->
+    <header class="bg-white border-b border-[#E2E8E5] sticky top-0 z-30">
+        <div class="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
+            <!-- Logo vert sarcelle -->
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-[#007A63] flex items-center justify-center relative shadow-2xs">
+                    <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="4" y="13" width="3.5" height="6" rx="0.8"/>
+                        <rect x="10.25" y="7" width="3.5" height="12" rx="0.8"/>
+                        <rect x="16.5" y="10" width="3.5" height="9" rx="0.8"/>
+                    </svg>
+                    <div class="w-2 h-2 bg-[#007A63] rotate-45 absolute -bottom-0.5 right-1.5"></div>
+                </div>
+                <span class="font-extrabold text-lg tracking-tight text-[#007A63]">CVATP</span>
+            </div>
+
+            <!-- Bouton Actualiser + Menu Burger -->
+            <div class="flex items-center gap-2">
+                <button type="button" id="btnBatchRefresh"
+                    class="px-2.5 py-1.5 rounded-xl text-[#007A63] bg-teal-50/80 hover:bg-teal-100 border border-teal-200/80 text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition">
+                    <svg id="batchRefreshIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    <span>Actualiser les cours</span>
+                </button>
+
+                <button type="button" id="btnOpenMenu" aria-label="Menu sauvegarde et paramètres"
+                    class="p-2 rounded-xl text-gray-700 hover:bg-gray-100 active:scale-95 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== CONTENU PRINCIPAL ==================== -->
+    <main class="max-w-lg w-full mx-auto px-4 pt-5 flex-1">
+
+        <!-- Titre & Sous-titre centrés -->
+        <div class="text-center mb-4">
+            <h1 class="text-[22px] sm:text-2xl font-extrabold text-gray-900 leading-tight tracking-tight">
+                Suivi des portefeuilles
+            </h1>
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 mt-1">
+                ENTRÉES & SORTIES
+            </p>
+            <p id="statusTimestamp" class="text-[11px] text-gray-400 mt-0.5">
+                Sauvegarde locale automatique
+            </p>
+        </div>
+
+        <!-- ==================== BANDEAU DE BILAN SUPÉRIEUR (EUR & USDC) ==================== -->
+        <section id="summaryBoard" class="mb-4 grid grid-cols-2 gap-2.5">
+            <!-- Colonne 1 : Portefeuilles EUR (€) -->
+            <div id="summaryCardEur" class="bg-white rounded-2xl p-3.5 border border-[#E2E8E5] shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between gap-1 mb-2">
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#007A63]">Portefeuilles EUR</span>
+                        <span class="text-[10px] font-bold bg-teal-50 text-[#007A63] px-1.5 py-0.5 rounded">€</span>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <div>
+                            <span class="block text-[10px] text-gray-400">Capital investi</span>
+                            <span id="eurInvested" class="block text-xs font-bold text-gray-800">0,00 €</span>
+                        </div>
+                        <div>
+                            <span class="block text-[10px] text-gray-400">Valorisation actuelle</span>
+                            <span id="eurCurrent" class="block text-sm font-extrabold text-gray-900">0,00 €</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-2.5 pt-2 border-t border-gray-100 space-y-1">
+                    <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-gray-500">Latent</span>
+                        <span id="eurLatent" class="font-bold text-gray-700">+0,00 € (0,00 %)</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-gray-500">Sorties figées</span>
+                        <span id="eurClosed" class="font-bold text-gray-700">+0,00 €</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colonne 2 : Portefeuille Crypto (USDC) -->
+            <div id="summaryCardUsdc" class="bg-white rounded-2xl p-3.5 border border-[#E2E8E5] shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between gap-1 mb-2">
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#007A63]">Crypto</span>
+                        <span class="text-[10px] font-bold bg-teal-50 text-[#007A63] px-1.5 py-0.5 rounded">USDC</span>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <div>
+                            <span class="block text-[10px] text-gray-400">Capital investi</span>
+                            <span id="usdcInvested" class="block text-xs font-bold text-gray-800">0,00 USDC</span>
+                        </div>
+                        <div>
+                            <span class="block text-[10px] text-gray-400">Valorisation actuelle</span>
+                            <span id="usdcCurrent" class="block text-sm font-extrabold text-gray-900">0,00 USDC</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-2.5 pt-2 border-t border-gray-100 space-y-1">
+                    <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-gray-500">Latent</span>
+                        <span id="usdcLatent" class="font-bold text-gray-700">+0,00 USDC (0,00 %)</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-gray-500">Sorties figées</span>
+                        <span id="usdcClosed" class="font-bold text-gray-700">+0,00 USDC</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Barre de filtres par enveloppe + Tri -->
+        <div class="mb-4 space-y-2.5">
+            <div id="envelopeFilterBar" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                <!-- Pilules générées dynamiquement -->
+            </div>
+
+            <div class="flex items-center gap-2">
+                <div class="relative flex-1">
+                    <input type="text" id="inputSearch" placeholder="Rechercher support, ISIN ou ticker..."
+                        class="w-full bg-white border border-[#E2E8E5] rounded-xl pl-8 pr-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#007A63]">
+                    <svg class="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
+                    </svg>
+                </div>
+
+                <select id="selectSort"
+                    class="bg-white border border-[#E2E8E5] rounded-xl px-2.5 py-2 text-xs font-semibold text-gray-700 focus:outline-none focus:border-[#007A63]">
+                    <option value="date_desc">Date récente</option>
+                    <option value="date_asc">Date ancienne</option>
+                    <option value="gain_pct">Gain %</option>
+                    <option value="gain_val">Gain montant</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- ==================== CONTENEUR PRINCIPAL BLANC ==================== -->
+        <div class="bg-white rounded-3xl p-4 sm:p-5 border border-[#E2E8E5] shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-7">
+
+            <!-- SECTION 1 : ENTRÉES -->
+            <section>
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-base font-bold text-gray-900">Entrées</h2>
+                        <span id="badgeOpenCount" class="text-[11px] font-bold bg-teal-50 text-[#007A63] px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <button type="button" id="btnHeaderAddEntry" class="text-xs font-semibold text-[#007A63] hover:underline">
+                        + Ajouter une entrée
+                    </button>
+                </div>
+
+                <div id="listOpenPositions" class="space-y-2.5">
+                    <!-- Cartes Entrées injectées ici -->
+                </div>
+            </section>
+
+            <hr class="border-gray-100">
+
+            <!-- SECTION 2 : SORTIES -->
+            <section>
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-base font-bold text-gray-900">Sorties</h2>
+                        <span id="badgeClosedCount" class="text-[11px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                </div>
+
+                <div id="listClosedPositions" class="space-y-2.5">
+                    <!-- Cartes Sorties injectées ici -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- ==================== BOUTON FLOTTANT "+" ==================== -->
+    <button type="button" id="fabAddEntry" aria-label="Ajouter une entrée"
+        class="fixed bottom-5 right-5 z-30 w-14 h-14 rounded-2xl bg-[#007A63] hover:bg-[#006350] text-white shadow-lg shadow-teal-950/20 flex items-center justify-center active:scale-95 transition cursor-pointer">
+        <svg class="w-7 h-7 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+        </svg>
+    </button>
+
+    <!-- ==================== BANNIÈRE NOTIFICATION (TOAST) ==================== -->
+    <div id="toastBanner" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 transform -translate-y-2">
+        <div class="bg-gray-900 text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-lg whitespace-nowrap">
+            <span id="toastText">Notification</span>
+        </div>
+    </div>
+
+    <!-- ==================== MODALE 1 : AJOUT D'UNE ENTRÉE UNITAIRE ==================== -->
+    <div id="modalAddEntry" class="fixed inset-0 z-40 hidden bg-black/45 backdrop-blur-[1px] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                <h3 class="text-base font-bold text-gray-900">Nouvelle Entrée</h3>
+                <button type="button" data-close-modal="modalAddEntry" class="p-1.5 rounded-full text-gray-400 hover:bg-gray-100">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="formAddEntry" class="space-y-3.5 mt-4">
+                <!-- Sélecteur d'enveloppe -->
+                <div>
+                    <label for="addEnvelope" class="block text-xs font-semibold text-gray-700 mb-1">Enveloppe *</label>
+                    <select id="addEnvelope"
+                        class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2.5 text-sm font-bold text-gray-900 focus:outline-none focus:border-[#007A63] focus:bg-white">
+                        <option value="Crypto">Crypto (USDC)</option>
+                        <option value="Linxea Spirit">Linxea Spirit (€)</option>
+                        <option value="Linxea Avenir">Linxea Avenir (€)</option>
+                        <option value="PEA">PEA (€)</option>
+                        <option value="PER / PERCO">PER / PERCO (€)</option>
+                    </select>
+                </div>
+
+                <!-- 1) BLOC CRYPTO (USDC, boutons rapides BTC/ETH/SOL/XRP/Autre, sans ISIN) -->
+                <div id="sectionAddCrypto" class="space-y-3 bg-gray-50 p-3.5 rounded-2xl border border-[#E2E8E5]">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">Cryptomonnaie *</label>
+                        <div class="grid grid-cols-5 gap-1.5" id="cryptoPresetGroup">
+                            <button type="button" data-ticker="BTC" data-name="BITCOIN" data-cg="bitcoin"
+                                class="crypto-preset-btn py-2 rounded-xl text-xs font-bold border bg-[#007A63] text-white border-[#007A63]">BTC</button>
+                            <button type="button" data-ticker="ETH" data-name="ETHEREUM" data-cg="ethereum"
+                                class="crypto-preset-btn py-2 rounded-xl text-xs font-bold border bg-white text-gray-700 border-gray-200">ETH</button>
+                            <button type="button" data-ticker="SOL" data-name="SOLANA" data-cg="solana"
+                                class="crypto-preset-btn py-2 rounded-xl text-xs font-bold border bg-white text-gray-700 border-gray-200">SOL</button>
+                            <button type="button" data-ticker="XRP" data-name="RIPPLE" data-cg="ripple"
+                                class="crypto-preset-btn py-2 rounded-xl text-xs font-bold border bg-white text-gray-700 border-gray-200">XRP</button>
+                            <button type="button" data-ticker="OTHER" data-name="" data-cg=""
+                                class="crypto-preset-btn py-2 rounded-xl text-xs font-bold border bg-white text-gray-700 border-gray-200">Autre</button>
+                        </div>
+                    </div>
+
+                    <div id="cryptoOtherFields" class="hidden space-y-2">
+                        <div>
+                            <label for="addCryptoCustomTicker" class="block text-[11px] font-semibold text-gray-600 mb-0.5">Ticker (ex: ADA, SUI, AVAX) *</label>
+                            <input type="text" id="addCryptoCustomTicker" placeholder="Ex: ADA"
+                                class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono uppercase focus:outline-none focus:border-[#007A63]">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="addCryptoInvested" class="block text-xs font-semibold text-gray-700 mb-1">Montant investi (USDC) *</label>
+                        <input type="number" step="any" min="0.0001" id="addCryptoInvested" placeholder="Ex: 100"
+                            class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#007A63]">
+                    </div>
+
+                    <div>
+                        <label for="addCryptoUnitPrice" class="block text-xs font-semibold text-gray-700 mb-1">Prix d'achat unitaire (USDC) <span class="text-gray-400 font-normal">(optionnel si inconnu)</span></label>
+                        <div class="flex gap-2">
+                            <input type="number" step="any" min="0" id="addCryptoUnitPrice" placeholder="Ex: 85000"
+                                class="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63]">
+                            <button type="button" id="btnFetchAddCryptoPrice"
+                                class="shrink-0 px-3 py-2 bg-teal-50 text-[#007A63] border border-teal-200 rounded-xl text-xs font-bold hover:bg-teal-100 active:scale-95 transition">
+                                Cours actuel
+                            </button>
+                        </div>
+                        <p id="previewAddCryptoQty" class="text-[11px] font-semibold text-[#007A63] mt-1.5">
+                            Quantité calculée : 0 BTC
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 2) BLOC ASSURANCE-VIE & PER / PERCO (Montant € + VL € optionnelle + ISIN optionnel) -->
+                <div id="sectionAddAvPer" class="hidden space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label for="addAvName" class="block text-xs font-semibold text-gray-700 mb-1">Nom du support *</label>
+                            <input type="text" id="addAvName" placeholder="Ex: COMGEST MONDE C"
+                                class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm uppercase focus:outline-none focus:border-[#007A63] focus:bg-white">
+                        </div>
+                        <div>
+                            <label for="addAvIsin" class="block text-xs font-semibold text-gray-700 mb-1">Code ISIN (optionnel)</label>
+                            <input type="text" id="addAvIsin" placeholder="Ex: FR0000284689"
+                                class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:border-[#007A63] focus:bg-white">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="addAvInvested" class="block text-xs font-semibold text-gray-700 mb-1">Montant investi (€) *</label>
+                            <input type="number" step="any" min="0.01" id="addAvInvested" placeholder="Ex: 1000"
+                                class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#007A63] focus:bg-white">
+                        </div>
+                        <div>
+                            <label for="addAvVl" class="block text-xs font-semibold text-gray-700 mb-1">VL d'achat (€) <span class="text-gray-400 font-normal">(opt.)</span></label>
+                            <input type="number" step="any" min="0" id="addAvVl" placeholder="Ex: 124.50"
+                                class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63] focus:bg-white">
+                        </div>
+                    </div>
+                    <p id="previewAddAvParts" class="text-[11px] font-semibold text-[#007A63]">
+                        Nombre de parts calculé : 0 parts
+                    </p>
+                </div>
+
+                <!-- 3) BLOC PEA (Quantité de titres + Prix unitaire € + ISIN) -->
+                <div id="sectionAddPea" class="hidden space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label for="addPeaName" class="block text-xs font-semibold text-gray-700 mb-1">Nom action ou ETF *</label>
+                            <input type="text" id="addPeaName" placeholder="Ex: AIR LIQUIDE"
+                                class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm uppercase focus:outline-none focus:border-[#007A63] focus:bg-white">
+                        </div>
+                        <div>
+                            <label for="addPeaIsin" class="block text-xs font-semibold text-gray-700 mb-1">Code ISIN *</label>
+                            <input type="text" id="addPeaIsin" placeholder="Ex: FR0000120073"
+                                class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:border-[#007A63] focus:bg-white">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="addPeaQty" class="block text-xs font-semibold text-gray-700 mb-1">Quantité de titres *</label>
+                            <input type="number" step="any" min="0.0001" id="addPeaQty" placeholder="Ex: 10"
+                                class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63] focus:bg-white">
+                        </div>
+                        <div>
+                            <label for="addPeaUnitPrice" class="block text-xs font-semibold text-gray-700 mb-1">Prix d'achat unitaire (€) *</label>
+                            <input type="number" step="any" min="0.0001" id="addPeaUnitPrice" placeholder="Ex: 168.40"
+                                class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63] focus:bg-white">
+                        </div>
+                    </div>
+                    <p id="previewAddPeaTotal" class="text-[11px] font-semibold text-[#007A63]">
+                        Montant investi calculé : 0,00 €
+                    </p>
+                </div>
+
+                <!-- Date de l'entrée -->
+                <div>
+                    <label for="addEntryDate" class="block text-xs font-semibold text-gray-700 mb-1">Date de l'entrée *</label>
+                    <input type="date" id="addEntryDate" required
+                        class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63] focus:bg-white">
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit"
+                        class="w-full py-3 rounded-xl bg-[#007A63] hover:bg-[#006350] text-white font-bold text-sm shadow-sm active:scale-[0.99] transition">
+                        Enregistrer l'entrée
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== MODALE 2 : DÉTAIL / ÉDITION / CLÔTURE / SUPPRESSION ==================== -->
+    <div id="modalDetailPosition" class="fixed inset-0 z-40 hidden bg-black/45 backdrop-blur-[1px] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                <div>
+                    <span id="detailEnvelopeBadge" class="text-xs font-extrabold text-[#007A63] uppercase">Enveloppe</span>
+                    <h3 id="detailModalTitle" class="text-base font-bold text-gray-900">Détail de la position</h3>
+                </div>
+                <button type="button" data-close-modal="modalDetailPosition" class="p-1.5 rounded-full text-gray-400 hover:bg-gray-100">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="formEditPosition" class="space-y-3.5 mt-4">
+                <input type="hidden" id="editPosId">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label for="editName" class="block text-xs font-semibold text-gray-700 mb-1">Nom du support *</label>
+                        <input type="text" id="editName" required
+                            class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm uppercase focus:outline-none focus:border-[#007A63]">
+                    </div>
+                    <div id="editCodeFieldWrapper">
+                        <label id="labelEditCode" for="editCode" class="block text-xs font-semibold text-gray-700 mb-1">Code ISIN / Ticker</label>
+                        <input type="text" id="editCode"
+                            class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:border-[#007A63]">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="editEntryDate" class="block text-xs font-semibold text-gray-700 mb-1">Date d'entrée *</label>
+                        <input type="date" id="editEntryDate" required
+                            class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63]">
+                    </div>
+                    <div id="editExitDateWrapper" class="hidden">
+                        <label for="editExitDate" class="block text-xs font-semibold text-gray-700 mb-1">Date de sortie *</label>
+                        <input type="date" id="editExitDate"
+                            class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63]">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label id="labelEditInvested" for="editInvestedAmount" class="block text-xs font-semibold text-gray-700 mb-1">Montant investi *</label>
+                        <input type="number" step="any" min="0.0001" id="editInvestedAmount" required
+                            class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#007A63]">
+                    </div>
+                    <div>
+                        <label id="labelEditBuyPrice" for="editBuyPrice" class="block text-xs font-semibold text-gray-700 mb-1">Prix d'achat / VL</label>
+                        <input type="number" step="any" min="0" id="editBuyPrice"
+                            class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63]">
+                    </div>
+                </div>
+
+                <!-- Bloc Cours actuel / VL de référence -->
+                <div class="bg-teal-50/60 border border-teal-200/70 rounded-2xl p-3.5 space-y-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <label id="labelEditCurrentPrice" for="editCurrentPrice" class="block text-xs font-bold text-[#007A63]">
+                            Cours actuel / VL (€)
+                        </label>
+                        <button type="button" id="btnFetchOnlineSingle"
+                            class="text-[11px] font-bold text-[#007A63] bg-white px-2.5 py-1 rounded-lg border border-teal-200 hover:bg-teal-50 active:scale-95 transition">
+                            Cours actuel
+                        </button>
+                    </div>
+                    <input type="number" step="any" min="0" id="editCurrentPrice"
+                        class="w-full bg-white border border-teal-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 focus:outline-none focus:border-[#007A63]">
+
+                    <div id="detailPerformanceBox" class="pt-1 flex items-center justify-between text-xs">
+                        <span class="text-gray-600">Valorisation : 0,00 €</span>
+                        <span class="font-bold text-[#0D8A58]">+0,00 € (+0,00 %)</span>
+                    </div>
+                </div>
+
+                <!-- Boutons d'action -->
+                <div class="pt-1 space-y-2">
+                    <button type="submit" id="btnSaveEditedPosition"
+                        class="w-full py-2.5 rounded-xl bg-[#007A63] hover:bg-[#006350] text-white font-bold text-sm transition">
+                        Enregistrer les modifications
+                    </button>
+
+                    <button type="button" id="btnOpenCloseSection"
+                        class="w-full py-2.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 font-bold text-xs hover:bg-amber-100 transition">
+                        Passer en Sortie (Figer la vente)
+                    </button>
+
+                    <!-- Suppression avec confirmation inline -->
+                    <div id="deleteConfirmWrapper" class="pt-1">
+                        <button type="button" id="btnRequestDeletePosition"
+                            class="w-full py-2.5 rounded-xl bg-red-50 text-[#D63638] border border-red-200 hover:bg-red-100 font-bold text-xs transition">
+                            Supprimer cette ligne
+                        </button>
+
+                        <div id="deleteConfirmBox" class="hidden p-3 rounded-2xl bg-red-50 border border-red-200 space-y-2">
+                            <p class="text-xs font-bold text-[#D63638] text-center">
+                                Confirmer la suppression définitive de cette ligne ?
+                            </p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" id="btnCancelDeletePosition"
+                                    class="py-2 rounded-xl bg-white text-gray-700 border border-gray-200 font-semibold text-xs">
+                                    Annuler
+                                </button>
+                                <button type="button" id="btnConfirmDeletePosition"
+                                    class="py-2 rounded-xl bg-[#D63638] text-white font-bold text-xs">
+                                    Oui, supprimer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <!-- SOUS-PANNEAU DE CLÔTURE ("PASSER EN SORTIE") -->
+            <div id="closePositionPanel" class="hidden mt-4 pt-4 border-t-2 border-dashed border-amber-200 space-y-3 bg-amber-50/40 p-3.5 rounded-2xl">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-xs font-extrabold uppercase tracking-wide text-amber-900">Clôturer et figer en Sortie</h4>
+                    <button type="button" id="btnCancelClosePanel" class="text-xs text-gray-500 underline">Annuler</button>
+                </div>
+
+                <div>
+                    <label for="closeDateInput" class="block text-xs font-semibold text-gray-700 mb-1">Date de sortie *</label>
+                    <input type="date" id="closeDateInput"
+                        class="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63]">
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label id="labelCloseUnitPrice" for="closeUnitPriceInput" class="block text-xs font-semibold text-gray-700">
+                            Prix unitaire / VL de sortie
+                        </label>
+                        <button type="button" id="btnFetchClosePrice" class="text-[11px] font-bold text-[#007A63] underline">
+                            Cours actuel
+                        </button>
+                    </div>
+                    <input type="number" step="any" min="0" id="closeUnitPriceInput"
+                        class="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#007A63]">
+                </div>
+
+                <div>
+                    <label id="labelCloseTotalAmount" for="closeTotalAmountInput" class="block text-xs font-semibold text-gray-700 mb-1">
+                        Ou montant total récupéré *
+                    </label>
+                    <input type="number" step="any" min="0" id="closeTotalAmountInput"
+                        class="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:border-[#007A63]">
+                </div>
+
+                <div id="closePreviewBanner" class="text-xs font-bold text-center py-2 rounded-xl bg-white border border-amber-200">
+                    Gain figé : 0,00 € (0,00 %)
+                </div>
+
+                <button type="button" id="btnConfirmClosePosition"
+                    class="w-full py-2.5 rounded-xl bg-[#007A63] text-white font-bold text-xs shadow-xs hover:bg-[#006350] transition">
+                    Confirmer la Sortie (Figer la performance)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODALE 3 : MENU BURGER (EXPORT / IMPORT / VIDER) ==================== -->
+    <div id="modalMenuBackup" class="fixed inset-0 z-40 hidden bg-black/45 backdrop-blur-[1px] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+                <h3 class="text-base font-bold text-gray-900">Gestion des données</h3>
+                <button type="button" data-close-modal="modalMenuBackup" class="p-1.5 rounded-full text-gray-400 hover:bg-gray-100">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <p class="text-xs text-gray-500 leading-relaxed">
+                Vos données sont stockées localement sur votre appareil. Exportez régulièrement une sauvegarde JSON ou CSV.
+            </p>
+
+            <div class="space-y-2.5">
+                <button type="button" id="btnExportJson"
+                    class="w-full flex items-center justify-between p-3.5 rounded-2xl bg-teal-50/70 border border-teal-200 text-[#007A63] font-bold text-sm hover:bg-teal-100/70 transition">
+                    <span>Export JSON</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                </button>
+
+                <button type="button" id="btnExportCsv"
+                    class="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-[#E2E8E5] text-gray-800 font-semibold text-sm hover:bg-gray-100 transition">
+                    <span>Export CSV</span>
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </button>
+
+                <label class="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-[#E2E8E5] text-gray-800 font-semibold text-sm hover:bg-gray-100 transition cursor-pointer">
+                    <span>Import JSON</span>
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                    </svg>
+                    <input type="file" id="inputImportJson" accept=".json" class="hidden">
+                </label>
+            </div>
+
+            <!-- Vider toutes les données avec confirmation inline -->
+            <div class="pt-3 border-t border-gray-100">
+                <button type="button" id="btnRequestClearAll"
+                    class="w-full py-2.5 rounded-xl bg-red-50 text-[#D63638] border border-red-200 font-bold text-xs hover:bg-red-100 transition">
+                    Vider toutes les données
+                </button>
+
+                <div id="clearAllConfirmBox" class="hidden p-3 rounded-2xl bg-red-50 border border-red-200 space-y-2">
+                    <p class="text-xs font-bold text-[#D63638] text-center">
+                        Supprimer l'intégralité de vos Entrées et Sorties ?
+                    </p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="btnCancelClearAll"
+                            class="py-2 rounded-xl bg-white text-gray-700 border border-gray-200 font-semibold text-xs">
+                            Annuler
+                        </button>
+                        <button type="button" id="btnConfirmClearAll"
+                            class="py-2 rounded-xl bg-[#D63638] text-white font-bold text-xs">
+                            Oui, tout vider
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== LOGIQUE JAVASCRIPT ==================== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. CONSTANTES & CONFIGURATION
+            const STORAGE_KEY = 'cvatp_portfolio_v3';
+            const ENVELOPES = ['Toutes', 'Crypto', 'Linxea Spirit', 'Linxea Avenir', 'PEA', 'PER / PERCO'];
+
+            const COINGECKO_IDS = {
+                'BTC': 'bitcoin',
+                'BITCOIN': 'bitcoin',
+                'ETH': 'ethereum',
+                'ETHEREUM': 'ethereum',
+                'SOL': 'solana',
+                'SOLANA': 'solana',
+                'XRP': 'ripple',
+                'RIPPLE': 'ripple',
+                'ADA': 'cardano',
+                'AVAX': 'avalanche-2',
+                'DOT': 'polkadot',
+                'LINK': 'chainlink',
+                'BNB': 'binancecoin',
+                'DOGE': 'dogecoin',
+                'SUI': 'sui'
+            };
+
+            // 2. ÉTAT GLOBAL
+            let state = {
+                positions: [],
+                activeEnvelope: 'Toutes',
+                selectedCrypto: { ticker: 'BTC', name: 'BITCOIN', cgId: 'bitcoin', isOther: false },
+                editingPositionId: null
+            };
+
+            // 3. UTILITAIRES DE FORMATAGE & CALCUL ROBUSTE
+            function getCurrency(envelope) {
+                return envelope === 'Crypto' ? 'USDC' : '€';
+            }
+
+            function formatMoney(amount, currency, withSign = false) {
+                const safeVal = Number.isFinite(amount) ? amount : 0;
+                const sign = (withSign && safeVal > 0) ? '+' : (withSign && safeVal === 0 ? '+' : '');
+                return sign + safeVal.toLocaleString('fr-FR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }) + ' ' + currency;
+            }
+
+            function formatPercent(pct) {
+                const safePct = Number.isFinite(pct) ? pct : 0;
+                const sign = safePct > 0 ? '+' : '';
+                return sign + safePct.toLocaleString('fr-FR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }) + ' %';
+            }
+
+            function formatDateFR(isoString) {
+                if (!isoString) return '--/--/----';
+                const parts = isoString.split('-');
+                return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : isoString;
+            }
+
+            function escapeHTML(str) {
+                if (!str) return '';
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            /**
+             * Logique de calcul robuste du capital investi, de la valorisation et du PnL :
+             * - Chaque position stocke explicitement `investedAmount`.
+             * - Si `buyPrice` et `currentPrice` > 0 : qty = investedAmount / buyPrice, currentValue = qty * currentPrice.
+             * - Sinon (ex: prix d'achat ou cours actuel non renseigné) : currentValue = investedAmount, pnl = 0, pnlPct = 0.
+             * - Pour une position clôturée ('closed') sans prix unitaire mais avec `closedAmount` : currentValue = closedAmount.
+             */
+            function computePositionMetrics(pos) {
+                const invested = Number(pos.investedAmount) > 0
+                    ? Number(pos.investedAmount)
+                    : ((Number(pos.qty) || 0) * (Number(pos.buyPrice) || 0));
+
+                const buyPrice = Number(pos.buyPrice) || 0;
+                const currentPrice = Number(pos.currentPrice) || 0;
+
+                let qty = Number(pos.qty) || 0;
+                if (buyPrice > 0 && invested > 0) {
+                    qty = invested / buyPrice;
+                }
+
+                let currentValue = invested;
+                if (pos.status === 'closed' && typeof pos.closedAmount === 'number' && pos.closedAmount >= 0 && buyPrice <= 0) {
+                    currentValue = pos.closedAmount;
+                } else if (buyPrice > 0 && currentPrice > 0 && qty > 0) {
+                    currentValue = qty * currentPrice;
+                }
+
+                const pnl = currentValue - invested;
+                const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
+
+                return { invested, qty, currentValue, pnl, pnlPct };
+            }
+
+            let toastTimer = null;
+            function showToast(message) {
+                const banner = document.getElementById('toastBanner');
+                const text = document.getElementById('toastText');
+                text.textContent = message;
+                banner.classList.remove('opacity-0', '-translate-y-2');
+                banner.classList.add('opacity-100', 'translate-y-0');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => {
+                    banner.classList.remove('opacity-100', 'translate-y-0');
+                    banner.classList.add('opacity-0', '-translate-y-2');
+                }, 3000);
+            }
+
+            // 4. STOCKAGE LOCAL (Base vierge par défaut sous cvatp_portfolio_v3)
+            function loadFromStorage() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw !== null) {
+                        const parsed = JSON.parse(raw);
+                        if (Array.isArray(parsed)) {
+                            state.positions = parsed;
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Erreur lecture localStorage:', e);
+                }
+                state.positions = [];
+                saveToStorage();
+            }
+
+            function saveToStorage() {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.positions));
+                } catch (e) {
+                    showToast('Erreur de sauvegarde locale');
+                }
+            }
+
+            // 5. API FINANCIÈRES EN LIGNE (CoinGecko & Yahoo Finance proxy)
+            async function fetchCryptoPriceUSDC(ticker, explicitCgId) {
+                const cleanTicker = (ticker || '').trim().toUpperCase();
+                const cgId = (explicitCgId || COINGECKO_IDS[cleanTicker] || cleanTicker.toLowerCase()).trim();
+                if (!cgId) return null;
+
+                try {
+                    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(cgId)}&vs_currencies=usd`;
+                    const response = await fetch(url);
+                    if (!response.ok) return null;
+                    const data = await response.json();
+                    if (data[cgId] && typeof data[cgId].usd === 'number') {
+                        return data[cgId].usd;
+                    }
+                } catch (err) {
+                    console.warn('API CoinGecko indisponible:', err);
+                }
+                return null;
+            }
+
+            async function fetchIsinPriceEUR(codeIsin) {
+                const query = (codeIsin || '').trim().toUpperCase();
+                if (!query) return null;
+
+                try {
+                    const searchUrl = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=3&newsCount=0`;
+                    const proxySearch = `https://api.allorigins.win/get?url=${encodeURIComponent(searchUrl)}`;
+                    const sRes = await fetch(proxySearch);
+                    if (!sRes.ok) return null;
+
+                    const wrapped = await sRes.json();
+                    const parsed = JSON.parse(wrapped.contents);
+                    if (!parsed.quotes || parsed.quotes.length === 0) return null;
+
+                    const euQuote = parsed.quotes.find(q => q.symbol && (q.symbol.endsWith('.PA') || q.symbol.endsWith('.DE') || q.symbol.endsWith('.AS')));
+                    const symbol = euQuote ? euQuote.symbol : parsed.quotes[0].symbol;
+
+                    const chartUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`;
+                    const proxyChart = `https://api.allorigins.win/get?url=${encodeURIComponent(chartUrl)}`;
+                    const cRes = await fetch(proxyChart);
+                    if (!cRes.ok) return null;
+
+                    const wrappedChart = await cRes.json();
+                    const chartData = JSON.parse(wrappedChart.contents);
+                    const price = chartData?.chart?.result?.[0]?.meta?.regularMarketPrice;
+                    return typeof price === 'number' ? price : null;
+                } catch (err) {
+                    console.warn('API Yahoo Finance indisponible:', err);
+                    return null;
+                }
+            }
+
+            // 6. RENDU DU BANDEAU DE BILAN SUPÉRIEUR (EUR & USDC)
+            function updateSummaryBoard(filteredPositions) {
+                // Adaptation visuelle des colonnes selon le filtre actif
+                const cardEur = document.getElementById('summaryCardEur');
+                const cardUsdc = document.getElementById('summaryCardUsdc');
+                const board = document.getElementById('summaryBoard');
+
+                if (state.activeEnvelope === 'Crypto') {
+                    cardEur.classList.add('hidden');
+                    cardUsdc.classList.remove('hidden');
+                    board.classList.remove('grid-cols-2');
+                    board.classList.add('grid-cols-1');
+                } else if (state.activeEnvelope !== 'Toutes') {
+                    cardEur.classList.remove('hidden');
+                    cardUsdc.classList.add('hidden');
+                    board.classList.remove('grid-cols-2');
+                    board.classList.add('grid-cols-1');
+                } else {
+                    cardEur.classList.remove('hidden');
+                    cardUsdc.classList.remove('hidden');
+                    board.classList.remove('grid-cols-1');
+                    board.classList.add('grid-cols-2');
+                }
+
+                // Calcul des totaux EUR
+                const eurOpen = filteredPositions.filter(p => p.envelope !== 'Crypto' && p.status === 'open');
+                const eurClosed = filteredPositions.filter(p => p.envelope !== 'Crypto' && p.status === 'closed');
+
+                let eurInv = 0, eurCur = 0, eurClosedPnl = 0;
+                eurOpen.forEach(p => {
+                    const m = computePositionMetrics(p);
+                    eurInv += m.invested;
+                    eurCur += m.currentValue;
+                });
+                eurClosed.forEach(p => {
+                    eurClosedPnl += computePositionMetrics(p).pnl;
+                });
+                const eurLatentPnl = eurCur - eurInv;
+                const eurLatentPct = eurInv > 0 ? (eurLatentPnl / eurInv) * 100 : 0;
+
+                document.getElementById('eurInvested').textContent = formatMoney(eurInv, '€');
+                document.getElementById('eurCurrent').textContent = formatMoney(eurCur, '€');
+
+                const elEurLatent = document.getElementById('eurLatent');
+                elEurLatent.textContent = `${formatMoney(eurLatentPnl, '€', true)} (${formatPercent(eurLatentPct)})`;
+                elEurLatent.className = `font-bold ${eurLatentPnl > 0 ? 'text-[#0D8A58]' : (eurLatentPnl < 0 ? 'text-[#D63638]' : 'text-gray-700')}`;
+
+                const elEurClosed = document.getElementById('eurClosed');
+                elEurClosed.textContent = formatMoney(eurClosedPnl, '€', true);
+                elEurClosed.className = `font-bold ${eurClosedPnl > 0 ? 'text-[#0D8A58]' : (eurClosedPnl < 0 ? 'text-[#D63638]' : 'text-gray-700')}`;
+
+                // Calcul des totaux USDC (Crypto)
+                const usdcOpen = filteredPositions.filter(p => p.envelope === 'Crypto' && p.status === 'open');
+                const usdcClosed = filteredPositions.filter(p => p.envelope === 'Crypto' && p.status === 'closed');
+
+                let usdcInv = 0, usdcCur = 0, usdcClosedPnl = 0;
+                usdcOpen.forEach(p => {
+                    const m = computePositionMetrics(p);
+                    usdcInv += m.invested;
+                    usdcCur += m.currentValue;
+                });
+                usdcClosed.forEach(p => {
+                    usdcClosedPnl += computePositionMetrics(p).pnl;
+                });
+                const usdcLatentPnl = usdcCur - usdcInv;
+                const usdcLatentPct = usdcInv > 0 ? (usdcLatentPnl / usdcInv) * 100 : 0;
+
+                document.getElementById('usdcInvested').textContent = formatMoney(usdcInv, 'USDC');
+                document.getElementById('usdcCurrent').textContent = formatMoney(usdcCur, 'USDC');
+
+                const elUsdcLatent = document.getElementById('usdcLatent');
+                elUsdcLatent.textContent = `${formatMoney(usdcLatentPnl, 'USDC', true)} (${formatPercent(usdcLatentPct)})`;
+                elUsdcLatent.className = `font-bold ${usdcLatentPnl > 0 ? 'text-[#0D8A58]' : (usdcLatentPnl < 0 ? 'text-[#D63638]' : 'text-gray-700')}`;
+
+                const elUsdcClosed = document.getElementById('usdcClosed');
+                elUsdcClosed.textContent = formatMoney(usdcClosedPnl, 'USDC', true);
+                elUsdcClosed.className = `font-bold ${usdcClosedPnl > 0 ? 'text-[#0D8A58]' : (usdcClosedPnl < 0 ? 'text-[#D63638]' : 'text-gray-700')}`;
+            }
+
+            // 7. RENDU DES PILULES ET DES CARTES
+            function renderFilterPills() {
+                const container = document.getElementById('envelopeFilterBar');
+                container.innerHTML = '';
+
+                ENVELOPES.forEach(env => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    const isActive = state.activeEnvelope === env;
+                    btn.className = isActive
+                        ? 'shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#007A63] text-white border border-[#007A63] transition'
+                        : 'shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white text-gray-600 border border-[#E2E8E5] hover:border-teal-300 transition';
+                    btn.textContent = env;
+                    btn.addEventListener('click', () => {
+                        state.activeEnvelope = env;
+                        renderFilterPills();
+                        renderDashboard();
+                    });
+                    container.appendChild(btn);
+                });
+            }
+
+            function renderDashboard() {
+                const searchTerm = document.getElementById('inputSearch').value.trim().toLowerCase();
+                const sortCriteria = document.getElementById('selectSort').value;
+
+                const filtered = state.positions.filter(pos => {
+                    const matchEnvelope = state.activeEnvelope === 'Toutes' || pos.envelope === state.activeEnvelope;
+                    const matchQuery = !searchTerm ||
+                        pos.name.toLowerCase().includes(searchTerm) ||
+                        (pos.code && pos.code.toLowerCase().includes(searchTerm)) ||
+                        pos.envelope.toLowerCase().includes(searchTerm);
+                    return matchEnvelope && matchQuery;
+                });
+
+                updateSummaryBoard(filtered);
+
+                const comparator = (a, b) => {
+                    const mA = computePositionMetrics(a);
+                    const mB = computePositionMetrics(b);
+                    const dA = a.status === 'closed' ? (a.exitDate || a.entryDate) : a.entryDate;
+                    const dB = b.status === 'closed' ? (b.exitDate || b.entryDate) : b.entryDate;
+
+                    if (sortCriteria === 'date_asc') return dA.localeCompare(dB);
+                    if (sortCriteria === 'gain_pct') return mB.pnlPct - mA.pnlPct;
+                    if (sortCriteria === 'gain_val') return mB.pnl - mA.pnl;
+                    return dB.localeCompare(dA);
+                };
+
+                const openList = filtered.filter(p => p.status === 'open').sort(comparator);
+                const closedList = filtered.filter(p => p.status === 'closed').sort(comparator);
+
+                document.getElementById('badgeOpenCount').textContent = openList.length;
+                document.getElementById('badgeClosedCount').textContent = closedList.length;
+
+                renderCardContainer('listOpenPositions', openList, 'Aucune entrée enregistrée. Appuyez sur + pour commencer.');
+                renderCardContainer('listClosedPositions', closedList, 'Aucune sortie enregistrée.');
+            }
+
+            function renderCardContainer(containerId, items, emptyText) {
+                const container = document.getElementById(containerId);
+                container.innerHTML = '';
+
+                if (items.length === 0) {
+                    const emptyDiv = document.createElement('div');
+                    emptyDiv.className = 'text-center py-6 px-4 rounded-2xl border border-dashed border-gray-200 text-xs text-gray-400';
+                    emptyDiv.textContent = emptyText;
+                    container.appendChild(emptyDiv);
+                    return;
+                }
+
+                items.forEach(pos => {
+                    const { invested, pnl, pnlPct } = computePositionMetrics(pos);
+                    const currency = getCurrency(pos.envelope);
+                    const isPositive = pnlPct >= 0;
+                    const perfColor = isPositive ? 'text-[#0D8A58]' : 'text-[#D63638]';
+                    const displayDate = pos.status === 'closed' ? formatDateFR(pos.exitDate) : formatDateFR(pos.entryDate);
+
+                    const card = document.createElement('div');
+                    card.className = 'card-animate cursor-pointer bg-white hover:bg-gray-50/90 active:scale-[0.99] transition rounded-2xl p-3.5 border border-[#E2E8E5] shadow-[0_1px_2px_rgba(0,0,0,0.02)]';
+
+                    const badgeHtml = pos.code
+                        ? `<span class="inline-block font-mono text-[10px] font-semibold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">${escapeHTML(pos.code)}</span>`
+                        : '';
+
+                    card.innerHTML = `
+                        <div class="flex items-start justify-between gap-2">
+                            <span class="font-bold text-[15px] text-[#007A63] leading-snug">
+                                ${escapeHTML(pos.envelope)}
+                            </span>
+                            <span class="text-xs font-medium text-gray-400 shrink-0">
+                                ${displayDate}
+                            </span>
+                        </div>
+                        <div class="flex items-end justify-between gap-3 mt-1.5">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="text-xs font-semibold text-gray-800 uppercase tracking-wide truncate">
+                                        ${escapeHTML(pos.name)}
+                                    </span>
+                                    ${badgeHtml}
+                                </div>
+                                <div class="text-[11px] text-gray-400 font-medium mt-1">
+                                    Investi : ${formatMoney(invested, currency)}
+                                </div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <div class="text-[16px] font-extrabold ${perfColor} leading-none">
+                                    ${formatPercent(pnlPct)}
+                                </div>
+                                <div class="text-[11px] font-bold ${perfColor} mt-1">
+                                    ${formatMoney(pnl, currency, true)}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    card.addEventListener('click', () => openDetailModal(pos.id));
+                    container.appendChild(card);
+                });
+            }
+
+            // 8. MODALE D'AJOUT D'UNE ENTRÉE UNITAIRE
+            function openAddEntryModal() {
+                document.getElementById('formAddEntry').reset();
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('addEntryDate').value = today;
+
+                if (state.activeEnvelope !== 'Toutes') {
+                    document.getElementById('addEnvelope').value = state.activeEnvelope;
+                } else {
+                    document.getElementById('addEnvelope').value = 'Crypto';
+                }
+
+                selectCryptoPreset('BTC', 'BITCOIN', 'bitcoin');
+                updateAddFormLayout();
+                document.getElementById('modalAddEntry').classList.remove('hidden');
+            }
+
+            function updateAddFormLayout() {
+                const env = document.getElementById('addEnvelope').value;
+                const secCrypto = document.getElementById('sectionAddCrypto');
+                const secAvPer = document.getElementById('sectionAddAvPer');
+                const secPea = document.getElementById('sectionAddPea');
+
+                secCrypto.classList.add('hidden');
+                secAvPer.classList.add('hidden');
+                secPea.classList.add('hidden');
+
+                if (env === 'Crypto') {
+                    secCrypto.classList.remove('hidden');
+                    recalcAddCryptoPreview();
+                } else if (env === 'PEA') {
+                    secPea.classList.remove('hidden');
+                    recalcAddPeaPreview();
+                } else {
+                    secAvPer.classList.remove('hidden');
+                    recalcAddAvPreview();
+                }
+            }
+
+            function selectCryptoPreset(ticker, name, cgId) {
+                state.selectedCrypto = {
+                    ticker,
+                    name,
+                    cgId,
+                    isOther: ticker === 'OTHER'
+                };
+
+                document.querySelectorAll('.crypto-preset-btn').forEach(btn => {
+                    const active = btn.dataset.ticker === ticker;
+                    btn.className = active
+                        ? 'crypto-preset-btn py-2 rounded-xl text-xs font-bold border bg-[#007A63] text-white border-[#007A63]'
+                        : 'crypto-preset-btn py-2 rounded-xl text-xs font-bold border bg-white text-gray-700 border-gray-200 hover:border-teal-300';
+                });
+
+                const otherBox = document.getElementById('cryptoOtherFields');
+                if (ticker === 'OTHER') {
+                    otherBox.classList.remove('hidden');
+                } else {
+                    otherBox.classList.add('hidden');
+                }
+                recalcAddCryptoPreview();
+            }
+
+            function recalcAddCryptoPreview() {
+                const invested = parseFloat(document.getElementById('addCryptoInvested').value) || 0;
+                const price = parseFloat(document.getElementById('addCryptoUnitPrice').value) || 0;
+                const qty = price > 0 ? invested / price : 0;
+                const ticker = state.selectedCrypto.isOther
+                    ? (document.getElementById('addCryptoCustomTicker').value.trim().toUpperCase() || 'UNITÉS')
+                    : state.selectedCrypto.ticker;
+
+                document.getElementById('previewAddCryptoQty').textContent = price > 0
+                    ? `Quantité calculée : ${qty.toLocaleString('fr-FR', { maximumFractionDigits: 8 })} ${ticker}`
+                    : `Quantité calculée : en attente du prix unitaire`;
+            }
+
+            function recalcAddAvPreview() {
+                const invested = parseFloat(document.getElementById('addAvInvested').value) || 0;
+                const vl = parseFloat(document.getElementById('addAvVl').value) || 0;
+                const parts = vl > 0 ? invested / vl : 0;
+                document.getElementById('previewAddAvParts').textContent = vl > 0
+                    ? `Nombre de parts calculé : ${parts.toLocaleString('fr-FR', { maximumFractionDigits: 4 })} parts`
+                    : `Nombre de parts calculé : en attente de la VL`;
+            }
+
+            function recalcAddPeaPreview() {
+                const qty = parseFloat(document.getElementById('addPeaQty').value) || 0;
+                const price = parseFloat(document.getElementById('addPeaUnitPrice').value) || 0;
+                const total = qty * price;
+                document.getElementById('previewAddPeaTotal').textContent =
+                    `Montant investi calculé : ${formatMoney(total, '€')}`;
+            }
+
+            async function handleFetchAddCryptoPrice() {
+                const ticker = state.selectedCrypto.isOther
+                    ? document.getElementById('addCryptoCustomTicker').value.trim().toUpperCase()
+                    : state.selectedCrypto.ticker;
+                const cgId = state.selectedCrypto.isOther
+                    ? (COINGECKO_IDS[ticker] || ticker.toLowerCase())
+                    : state.selectedCrypto.cgId;
+
+                if (!ticker) {
+                    showToast('Renseignez le ticker de la crypto');
+                    return;
+                }
+
+                const btn = document.getElementById('btnFetchAddCryptoPrice');
+                btn.textContent = '...';
+                const price = await fetchCryptoPriceUSDC(ticker, cgId);
+                btn.textContent = 'Cours actuel';
+
+                if (price !== null && price > 0) {
+                    document.getElementById('addCryptoUnitPrice').value = Number(price.toFixed(6));
+                    recalcAddCryptoPreview();
+                    showToast(`Cours ${ticker} : ${price.toLocaleString('fr-FR')} USDC`);
+                } else {
+                    showToast('Cours introuvable, saisissez-le manuellement');
+                }
+            }
+
+            function handleSaveNewEntry(event) {
+                event.preventDefault();
+                const envelope = document.getElementById('addEnvelope').value;
+                const entryDate = document.getElementById('addEntryDate').value;
+
+                let name = '';
+                let code = '';
+                let cgId = '';
+                let investedAmount = 0;
+                let buyPrice = 0;
+                let qty = 0;
+
+                if (envelope === 'Crypto') {
+                    investedAmount = parseFloat(document.getElementById('addCryptoInvested').value) || 0;
+                    buyPrice = parseFloat(document.getElementById('addCryptoUnitPrice').value) || 0;
+
+                    if (state.selectedCrypto.isOther) {
+                        code = document.getElementById('addCryptoCustomTicker').value.trim().toUpperCase();
+                        name = code;
+                        cgId = COINGECKO_IDS[code] || code.toLowerCase();
+                    } else {
+                        code = state.selectedCrypto.ticker;
+                        name = state.selectedCrypto.name;
+                        cgId = state.selectedCrypto.cgId;
+                    }
+
+                    if (!code || investedAmount <= 0) {
+                        showToast('Veuillez saisir le montant investi en USDC');
+                        return;
+                    }
+                    qty = buyPrice > 0 ? investedAmount / buyPrice : 0;
+                } else if (envelope === 'PEA') {
+                    name = document.getElementById('addPeaName').value.trim().toUpperCase();
+                    code = document.getElementById('addPeaIsin').value.trim().toUpperCase();
+                    qty = parseFloat(document.getElementById('addPeaQty').value) || 0;
+                    buyPrice = parseFloat(document.getElementById('addPeaUnitPrice').value) || 0;
+
+                    if (!name || !code || qty <= 0 || buyPrice <= 0) {
+                        showToast('Veuillez remplir tous les champs PEA');
+                        return;
+                    }
+                    investedAmount = qty * buyPrice;
+                } else {
+                    name = document.getElementById('addAvName').value.trim().toUpperCase();
+                    code = document.getElementById('addAvIsin').value.trim().toUpperCase();
+                    investedAmount = parseFloat(document.getElementById('addAvInvested').value) || 0;
+                    buyPrice = parseFloat(document.getElementById('addAvVl').value) || 0;
+
+                    if (!name || investedAmount <= 0) {
+                        showToast('Veuillez saisir le nom du support et le montant investi (€)');
+                        return;
+                    }
+                    qty = buyPrice > 0 ? investedAmount / buyPrice : 0;
+                }
+
+                const newPosition = {
+                    id: 'pos-' + Date.now(),
+                    status: 'open',
+                    envelope,
+                    name,
+                    code,
+                    cgId,
+                    entryDate,
+                    exitDate: null,
+                    investedAmount,
+                    qty,
+                    buyPrice,
+                    currentPrice: buyPrice
+                };
+
+                state.positions.unshift(newPosition);
+                saveToStorage();
+                document.getElementById('modalAddEntry').classList.add('hidden');
+                renderDashboard();
+                showToast('Entrée enregistrée');
+            }
+
+            // 9. MODALE DÉTAIL / ÉDITION / CLÔTURE / SUPPRESSION
+            function openDetailModal(posId) {
+                const pos = state.positions.find(p => p.id === posId);
+                if (!pos) return;
+
+                state.editingPositionId = pos.id;
+                const currency = getCurrency(pos.envelope);
+                const isClosed = pos.status === 'closed';
+                const isCrypto = pos.envelope === 'Crypto';
+                const metrics = computePositionMetrics(pos);
+
+                document.getElementById('editPosId').value = pos.id;
+                document.getElementById('detailEnvelopeBadge').textContent = `${pos.envelope} • ${currency}`;
+                document.getElementById('detailModalTitle').textContent = isClosed
+                    ? 'Détail de la Sortie (Figée)'
+                    : 'Détail & Mise à jour';
+
+                document.getElementById('editName').value = pos.name;
+                document.getElementById('editCode').value = pos.code || '';
+                document.getElementById('labelEditCode').textContent = isCrypto ? 'Ticker Crypto' : 'Code ISIN';
+                document.getElementById('editEntryDate').value = pos.entryDate;
+
+                document.getElementById('labelEditInvested').textContent = `Montant investi (${currency}) *`;
+                document.getElementById('editInvestedAmount').value = metrics.invested;
+
+                document.getElementById('labelEditBuyPrice').textContent = `Prix d'achat / VL (${currency})`;
+                document.getElementById('editBuyPrice').value = pos.buyPrice || '';
+
+                document.getElementById('labelEditCurrentPrice').textContent = isClosed
+                    ? `Prix de sortie figé (${currency})`
+                    : `Cours actuel / VL (${currency})`;
+                document.getElementById('editCurrentPrice').value = pos.currentPrice || '';
+
+                // Réinitialisation des sous-panneaux
+                document.getElementById('closePositionPanel').classList.add('hidden');
+                document.getElementById('deleteConfirmBox').classList.add('hidden');
+                document.getElementById('btnRequestDeletePosition').classList.remove('hidden');
+
+                const exitWrapper = document.getElementById('editExitDateWrapper');
+                const btnOpenClose = document.getElementById('btnOpenCloseSection');
+                const btnFetchOnline = document.getElementById('btnFetchOnlineSingle');
+
+                if (isClosed) {
+                    exitWrapper.classList.remove('hidden');
+                    document.getElementById('editExitDate').value = pos.exitDate || '';
+                    btnOpenClose.classList.add('hidden');
+                    btnFetchOnline.classList.add('hidden');
+                } else {
+                    exitWrapper.classList.add('hidden');
+                    btnOpenClose.classList.remove('hidden');
+                    btnFetchOnline.classList.remove('hidden');
+                }
+
+                updateDetailPerformanceBox();
+                document.getElementById('modalDetailPosition').classList.remove('hidden');
+            }
+
+            function updateDetailPerformanceBox() {
+                const pos = state.positions.find(p => p.id === state.editingPositionId);
+                if (!pos) return;
+
+                const currency = getCurrency(pos.envelope);
+                const invested = parseFloat(document.getElementById('editInvestedAmount').value) || 0;
+                const buyPrice = parseFloat(document.getElementById('editBuyPrice').value) || 0;
+                const currentPrice = parseFloat(document.getElementById('editCurrentPrice').value) || 0;
+
+                const tempPos = {
+                    ...pos,
+                    investedAmount: invested,
+                    buyPrice,
+                    currentPrice
+                };
+                const { currentValue, pnl, pnlPct } = computePositionMetrics(tempPos);
+
+                const color = pnl >= 0 ? 'text-[#0D8A58]' : 'text-[#D63638]';
+                document.getElementById('detailPerformanceBox').innerHTML = `
+                    <span class="text-gray-600">Valorisation : <strong>${formatMoney(currentValue, currency)}</strong></span>
+                    <span class="font-bold ${color}">${formatMoney(pnl, currency, true)} (${formatPercent(pnlPct)})</span>
+                `;
+            }
+
+            async function handleFetchOnlineSingle() {
+                const pos = state.positions.find(p => p.id === state.editingPositionId);
+                if (!pos) return;
+
+                const currency = getCurrency(pos.envelope);
+                const code = document.getElementById('editCode').value.trim().toUpperCase();
+                showToast('Recherche du cours en ligne...');
+
+                let price = null;
+                if (pos.envelope === 'Crypto') {
+                    price = await fetchCryptoPriceUSDC(code || pos.name, pos.cgId);
+                } else if (code) {
+                    price = await fetchIsinPriceEUR(code);
+                }
+
+                if (price !== null && price > 0) {
+                    const formatted = Number(price.toFixed(6));
+                    document.getElementById('editCurrentPrice').value = formatted;
+                    // Si le prix d'achat n'avait pas encore été renseigné, on l'initialise à ce cours
+                    const currentBuy = parseFloat(document.getElementById('editBuyPrice').value) || 0;
+                    if (currentBuy <= 0) {
+                        document.getElementById('editBuyPrice').value = formatted;
+                    }
+                    updateDetailPerformanceBox();
+                    showToast(`Cours mis à jour : ${price.toLocaleString('fr-FR')} ${currency}`);
+                } else {
+                    showToast('Cotation automatique indisponible (saisissez la VL manuellement)');
+                }
+            }
+
+            function handleSaveEditedPosition(event) {
+                event.preventDefault();
+                const index = state.positions.findIndex(p => p.id === state.editingPositionId);
+                if (index === -1) return;
+
+                const pos = state.positions[index];
+                const invested = parseFloat(document.getElementById('editInvestedAmount').value) || 0;
+                const buyPrice = parseFloat(document.getElementById('editBuyPrice').value) || 0;
+                const currentPrice = parseFloat(document.getElementById('editCurrentPrice').value) || 0;
+
+                if (invested <= 0) {
+                    showToast('Le montant investi doit être supérieur à 0');
+                    return;
+                }
+
+                pos.name = document.getElementById('editName').value.trim().toUpperCase();
+                pos.code = document.getElementById('editCode').value.trim().toUpperCase();
+                pos.entryDate = document.getElementById('editEntryDate').value;
+                pos.investedAmount = invested;
+                pos.buyPrice = buyPrice;
+                pos.currentPrice = currentPrice;
+                pos.qty = buyPrice > 0 ? invested / buyPrice : 0;
+
+                if (pos.status === 'closed') {
+                    pos.exitDate = document.getElementById('editExitDate').value;
+                }
+
+                saveToStorage();
+                document.getElementById('modalDetailPosition').classList.add('hidden');
+                renderDashboard();
+                showToast('Modifications enregistrées');
+            }
+
+            // Suppression unitaire avec confirmation inline
+            function handleConfirmDeletePosition() {
+                if (!state.editingPositionId) return;
+                state.positions = state.positions.filter(p => p.id !== state.editingPositionId);
+                saveToStorage();
+                document.getElementById('modalDetailPosition').classList.add('hidden');
+                renderDashboard();
+                showToast('Ligne supprimée');
+            }
+
+            // Clôture ("Passer en Sortie")
+            function openClosePanel() {
+                const pos = state.positions.find(p => p.id === state.editingPositionId);
+                if (!pos) return;
+
+                const currency = getCurrency(pos.envelope);
+                const today = new Date().toISOString().split('T')[0];
+                const invested = parseFloat(document.getElementById('editInvestedAmount').value) || pos.investedAmount;
+                const buyPrice = parseFloat(document.getElementById('editBuyPrice').value) || pos.buyPrice || 0;
+                const currentUnit = parseFloat(document.getElementById('editCurrentPrice').value) || pos.currentPrice || buyPrice;
+                const qty = buyPrice > 0 ? invested / buyPrice : 0;
+
+                document.getElementById('closeDateInput').value = today;
+                document.getElementById('labelCloseUnitPrice').textContent = `Prix unitaire / VL de sortie (${currency})`;
+                document.getElementById('labelCloseTotalAmount').textContent = `Ou montant total récupéré (${currency}) *`;
+
+                document.getElementById('closeUnitPriceInput').value = currentUnit > 0 ? currentUnit : '';
+                const defaultTotal = (qty > 0 && currentUnit > 0) ? (qty * currentUnit) : invested;
+                document.getElementById('closeTotalAmountInput').value = Number(defaultTotal.toFixed(2));
+
+                updateClosePreviewBanner();
+                document.getElementById('closePositionPanel').classList.remove('hidden');
+            }
+
+            function syncCloseFromUnitPrice() {
+                const invested = parseFloat(document.getElementById('editInvestedAmount').value) || 0;
+                const buyPrice = parseFloat(document.getElementById('editBuyPrice').value) || 0;
+                const qty = buyPrice > 0 ? invested / buyPrice : 0;
+                const unitPrice = parseFloat(document.getElementById('closeUnitPriceInput').value) || 0;
+
+                if (qty > 0) {
+                    document.getElementById('closeTotalAmountInput').value = Number((qty * unitPrice).toFixed(2));
+                }
+                updateClosePreviewBanner();
+            }
+
+            function syncCloseFromTotalAmount() {
+                const invested = parseFloat(document.getElementById('editInvestedAmount').value) || 0;
+                const buyPrice = parseFloat(document.getElementById('editBuyPrice').value) || 0;
+                const qty = buyPrice > 0 ? invested / buyPrice : 0;
+                const total = parseFloat(document.getElementById('closeTotalAmountInput').value) || 0;
+
+                if (qty > 0) {
+                    document.getElementById('closeUnitPriceInput').value = Number((total / qty).toFixed(6));
+                }
+                updateClosePreviewBanner();
+            }
+
+            function updateClosePreviewBanner() {
+                const pos = state.positions.find(p => p.id === state.editingPositionId);
+                if (!pos) return;
+
+                const currency = getCurrency(pos.envelope);
+                const invested = parseFloat(document.getElementById('editInvestedAmount').value) || 0;
+                const totalRecovered = parseFloat(document.getElementById('closeTotalAmountInput').value) || 0;
+
+                const gain = totalRecovered - invested;
+                const pct = invested > 0 ? (gain / invested) * 100 : 0;
+
+                const banner = document.getElementById('closePreviewBanner');
+                banner.textContent = `Gain figé : ${formatMoney(gain, currency, true)} (${formatPercent(pct)})`;
+                banner.className = `text-xs font-bold text-center py-2 rounded-xl border ${
+                    gain >= 0 ? 'bg-emerald-50 text-[#0D8A58] border-emerald-200' : 'bg-red-50 text-[#D63638] border-red-200'
+                }`;
+            }
+
+            async function handleFetchClosePrice() {
+                const pos = state.positions.find(p => p.id === state.editingPositionId);
+                if (!pos) return;
+
+                const currency = getCurrency(pos.envelope);
+                const code = document.getElementById('editCode').value.trim().toUpperCase();
+                showToast('Récupération du cours actuel...');
+
+                let price = null;
+                if (pos.envelope === 'Crypto') {
+                    price = await fetchCryptoPriceUSDC(code || pos.name, pos.cgId);
+                } else if (code) {
+                    price = await fetchIsinPriceEUR(code);
+                }
+
+                if (price !== null && price > 0) {
+                    document.getElementById('closeUnitPriceInput').value = Number(price.toFixed(6));
+                    syncCloseFromUnitPrice();
+                    showToast(`Cours récupéré : ${price.toLocaleString('fr-FR')} ${currency}`);
+                } else {
+                    showToast('Cours indisponible, saisissez le montant récupéré');
+                }
+            }
+
+            function handleConfirmClosePosition() {
+                const index = state.positions.findIndex(p => p.id === state.editingPositionId);
+                if (index === -1) return;
+
+                const exitDate = document.getElementById('closeDateInput').value;
+                const totalRecovered = parseFloat(document.getElementById('closeTotalAmountInput').value);
+                const exitUnitPrice = parseFloat(document.getElementById('closeUnitPriceInput').value) || 0;
+
+                if (!exitDate || isNaN(totalRecovered) || totalRecovered < 0) {
+                    showToast('Veuillez renseigner la date et le montant récupéré');
+                    return;
+                }
+
+                const pos = state.positions[index];
+                const invested = parseFloat(document.getElementById('editInvestedAmount').value) || pos.investedAmount;
+                const buyPrice = parseFloat(document.getElementById('editBuyPrice').value) || pos.buyPrice || 0;
+                const qty = buyPrice > 0 ? invested / buyPrice : 0;
+
+                pos.investedAmount = invested;
+                pos.buyPrice = buyPrice;
+                pos.qty = qty;
+                pos.status = 'closed';
+                pos.exitDate = exitDate;
+                pos.closedAmount = totalRecovered;
+                pos.currentPrice = exitUnitPrice > 0 ? exitUnitPrice : (qty > 0 ? totalRecovered / qty : 0);
+
+                saveToStorage();
+                document.getElementById('modalDetailPosition').classList.add('hidden');
+                renderDashboard();
+                showToast('Position clôturée et figée dans Sorties');
+            }
+
+            // 10. ACTUALISATION EN LOT DES COURS
+            async function handleBatchRefresh() {
+                const openItems = state.positions.filter(p => p.status === 'open');
+                if (openItems.length === 0) {
+                    showToast('Aucune entrée ouverte à actualiser');
+                    return;
+                }
+
+                const icon = document.getElementById('batchRefreshIcon');
+                icon.classList.add('spin-refresh');
+                showToast('Actualisation des cours en cours...');
+
+                let updatedCount = 0;
+                for (const pos of openItems) {
+                    let newPrice = null;
+                    if (pos.envelope === 'Crypto') {
+                        newPrice = await fetchCryptoPriceUSDC(pos.code || pos.name, pos.cgId);
+                    } else if (pos.code) {
+                        newPrice = await fetchIsinPriceEUR(pos.code);
+                    }
+
+                    if (newPrice !== null && newPrice > 0) {
+                        const formatted = Number(newPrice.toFixed(6));
+                        pos.currentPrice = formatted;
+                        // Si la ligne avait été créée sans prix unitaire d'achat, on l'aligne pour permettre le suivi futur
+                        if (!pos.buyPrice || pos.buyPrice <= 0) {
+                            pos.buyPrice = formatted;
+                            pos.qty = pos.investedAmount > 0 ? pos.investedAmount / formatted : 0;
+                        }
+                        updatedCount++;
+                    }
+                }
+
+                icon.classList.remove('spin-refresh');
+                const nowStr = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                document.getElementById('statusTimestamp').textContent = `Dernière actualisation : ${nowStr}`;
+
+                saveToStorage();
+                renderDashboard();
+
+                if (updatedCount > 0) {
+                    showToast(`${updatedCount} position(s) actualisée(s)`);
+                } else {
+                    showToast('Aucune cotation en ligne trouvée (saisie manuelle possible)');
+                }
+            }
+
+            // 11. MENU BURGER : EXPORT JSON / EXPORT CSV / IMPORT JSON / VIDER TOUTES LES DONNÉES
+            function downloadFile(content, filename, mimeType) {
+                const blob = new Blob([content], { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            function handleExportJson() {
+                const dataStr = JSON.stringify(state.positions, null, 2);
+                const dateTag = new Date().toISOString().slice(0, 10);
+                downloadFile(dataStr, `cvatp_portefeuilles_${dateTag}.json`, 'application/json');
+                showToast('Sauvegarde JSON exportée');
+            }
+
+            function handleExportCsv() {
+                const headers = [
+                    'Enveloppe',
+                    'Statut',
+                    'Support',
+                    'ISIN_Ticker',
+                    'Date',
+                    'Montant_Investi',
+                    'Valorisation_Actuelle_Sortie',
+                    'Gain_Perte',
+                    'Devise',
+                    'Performance_Pct'
+                ];
+
+                const rows = state.positions.map(pos => {
+                    const { invested, currentValue, pnl, pnlPct } = computePositionMetrics(pos);
+                    const currency = getCurrency(pos.envelope);
+                    const dateStr = pos.status === 'closed' ? (pos.exitDate || pos.entryDate) : pos.entryDate;
+
+                    return [
+                        `"${pos.envelope}"`,
+                        `"${pos.status === 'open' ? 'Entrée' : 'Sortie'}"`,
+                        `"${pos.name}"`,
+                        `"${pos.code || ''}"`,
+                        dateStr,
+                        invested.toFixed(2),
+                        currentValue.toFixed(2),
+                        pnl.toFixed(2),
+                        `"${currency}"`,
+                        pnlPct.toFixed(2)
+                    ].join(';');
+                });
+
+                const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\n');
+                const dateTag = new Date().toISOString().slice(0, 10);
+                downloadFile(csvContent, `cvatp_portefeuilles_${dateTag}.csv`, 'text/csv;charset=utf-8;');
+                showToast('Export CSV généré');
+            }
+
+            function handleImportJson(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const imported = JSON.parse(e.target.result);
+                        const list = Array.isArray(imported) ? imported : imported.positions;
+                        if (!Array.isArray(list)) throw new Error('Format JSON invalide');
+
+                        state.positions = list;
+                        saveToStorage();
+                        document.getElementById('modalMenuBackup').classList.add('hidden');
+                        renderDashboard();
+                        showToast(`${list.length} ligne(s) importée(s)`);
+                    } catch (err) {
+                        showToast('Fichier JSON invalide');
+                    }
+                };
+                reader.readAsText(file);
+                event.target.value = '';
+            }
+
+            function handleConfirmClearAll() {
+                state.positions = [];
+                saveToStorage();
+                document.getElementById('clearAllConfirmBox').classList.add('hidden');
+                document.getElementById('btnRequestClearAll').classList.remove('hidden');
+                document.getElementById('modalMenuBackup').classList.add('hidden');
+                renderDashboard();
+                showToast('Toutes les données ont été vidées');
+            }
+
+            // 12. ATTACHEMENT DES ÉVÉNEMENTS (100% addEventListener)
+            function bindEvents() {
+                document.getElementById('fabAddEntry').addEventListener('click', openAddEntryModal);
+                document.getElementById('btnHeaderAddEntry').addEventListener('click', openAddEntryModal);
+
+                document.getElementById('btnOpenMenu').addEventListener('click', () => {
+                    document.getElementById('clearAllConfirmBox').classList.add('hidden');
+                    document.getElementById('btnRequestClearAll').classList.remove('hidden');
+                    document.getElementById('modalMenuBackup').classList.remove('hidden');
+                });
+
+                document.getElementById('btnBatchRefresh').addEventListener('click', handleBatchRefresh);
+
+                document.querySelectorAll('[data-close-modal]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const targetId = btn.getAttribute('data-close-modal');
+                        document.getElementById(targetId).classList.add('hidden');
+                    });
+                });
+
+                // Filtres et tri
+                document.getElementById('inputSearch').addEventListener('input', renderDashboard);
+                document.getElementById('selectSort').addEventListener('change', renderDashboard);
+
+                // Formulaire d'ajout d'une Entrée
+                document.getElementById('addEnvelope').addEventListener('change', updateAddFormLayout);
+                document.querySelectorAll('.crypto-preset-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        selectCryptoPreset(btn.dataset.ticker, btn.dataset.name, btn.dataset.cg);
+                    });
+                });
+
+                document.getElementById('addCryptoCustomTicker').addEventListener('input', recalcAddCryptoPreview);
+                document.getElementById('addCryptoInvested').addEventListener('input', recalcAddCryptoPreview);
+                document.getElementById('addCryptoUnitPrice').addEventListener('input', recalcAddCryptoPreview);
+                document.getElementById('btnFetchAddCryptoPrice').addEventListener('click', handleFetchAddCryptoPrice);
+
+                document.getElementById('addAvInvested').addEventListener('input', recalcAddAvPreview);
+                document.getElementById('addAvVl').addEventListener('input', recalcAddAvPreview);
+
+                document.getElementById('addPeaQty').addEventListener('input', recalcAddPeaPreview);
+                document.getElementById('addPeaUnitPrice').addEventListener('input', recalcAddPeaPreview);
+
+                document.getElementById('formAddEntry').addEventListener('submit', handleSaveNewEntry);
+
+                // Modale Détail / Édition / Clôture / Suppression unitaire
+                document.getElementById('editInvestedAmount').addEventListener('input', updateDetailPerformanceBox);
+                document.getElementById('editBuyPrice').addEventListener('input', updateDetailPerformanceBox);
+                document.getElementById('editCurrentPrice').addEventListener('input', updateDetailPerformanceBox);
+                document.getElementById('btnFetchOnlineSingle').addEventListener('click', handleFetchOnlineSingle);
+                document.getElementById('formEditPosition').addEventListener('submit', handleSaveEditedPosition);
+
+                document.getElementById('btnRequestDeletePosition').addEventListener('click', () => {
+                    document.getElementById('btnRequestDeletePosition').classList.add('hidden');
+                    document.getElementById('deleteConfirmBox').classList.remove('hidden');
+                });
+                document.getElementById('btnCancelDeletePosition').addEventListener('click', () => {
+                    document.getElementById('deleteConfirmBox').classList.add('hidden');
+                    document.getElementById('btnRequestDeletePosition').classList.remove('hidden');
+                });
+                document.getElementById('btnConfirmDeletePosition').addEventListener('click', handleConfirmDeletePosition);
+
+                // Clôture vers Sorties
+                document.getElementById('btnOpenCloseSection').addEventListener('click', openClosePanel);
+                document.getElementById('btnCancelClosePanel').addEventListener('click', () => {
+                    document.getElementById('closePositionPanel').classList.add('hidden');
+                });
+                document.getElementById('closeUnitPriceInput').addEventListener('input', syncCloseFromUnitPrice);
+                document.getElementById('closeTotalAmountInput').addEventListener('input', syncCloseFromTotalAmount);
+                document.getElementById('btnFetchClosePrice').addEventListener('click', handleFetchClosePrice);
+                document.getElementById('btnConfirmClosePosition').addEventListener('click', handleConfirmClosePosition);
+
+                // Menu Sauvegarde & Nettoyage complet
+                document.getElementById('btnExportJson').addEventListener('click', handleExportJson);
+                document.getElementById('btnExportCsv').addEventListener('click', handleExportCsv);
+                document.getElementById('inputImportJson').addEventListener('change', handleImportJson);
+
+                document.getElementById('btnRequestClearAll').addEventListener('click', () => {
+                    document.getElementById('btnRequestClearAll').classList.add('hidden');
+                    document.getElementById('clearAllConfirmBox').classList.remove('hidden');
+                });
+                document.getElementById('btnCancelClearAll').addEventListener('click', () => {
+                    document.getElementById('clearAllConfirmBox').classList.add('hidden');
+                    document.getElementById('btnRequestClearAll').classList.remove('hidden');
+                });
+                document.getElementById('btnConfirmClearAll').addEventListener('click', handleConfirmClearAll);
+            }
+
+            // 13. INITIALISATION
+            loadFromStorage();
+            bindEvents();
+            renderFilterPills();
+            renderDashboard();
+        });
+    </script>
+</body>
+</html>
