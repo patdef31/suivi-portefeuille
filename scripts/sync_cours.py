@@ -5,7 +5,7 @@ import urllib.request
 
 SHEET_CSV_URL = os.environ.get(
     "SHEET_CSV_URL",
-    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5UquHBz76wt-ZKOSXFOvHcb7GBRdB1F96xi3ifHxfKll4G7x7fql30m1hDekhTw/pub?gid=464867013&single=true&output=csv",
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5UquHBz76wt-ZKOSXFOvHcb7GBRdB1F96xi3ifHxfKll4G7x7fql30m1hDeKhTw/pub?output=csv",
 )
 
 def parse_number(val: str):
