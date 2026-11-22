@@ -274,6 +274,10 @@
                         <h2 class="text-base font-bold text-gray-900">Sorties</h2>
                         <span id="closedCountBadge" class="text-[11px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">0</span>
                     </div>
+                    <button type="button" data-action="open-exit-picker"
+                        class="text-xs font-bold text-[#007A63] hover:underline cursor-pointer">
+                        + Ajouter une sortie
+                    </button>
                 </div>
 
                 <div id="closedCardsContainer" class="space-y-2.5">
@@ -482,6 +486,32 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- ==================== MODALE 1B : CHOIX DE LA POSITION POUR UNE SORTIE ==================== -->
+    <div id="modalExitPicker" class="fixed inset-0 z-40 hidden bg-black/45 backdrop-blur-[1px] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[92vh] flex flex-col">
+            <div class="flex items-center justify-between pb-3 border-b border-gray-100 shrink-0">
+                <div>
+                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#007A63]">Nouvelle sortie</span>
+                    <h3 class="text-base font-bold text-gray-900">Choisir une entrée à céder</h3>
+                </div>
+                <button type="button" data-action="close-modal" data-modal="modalExitPicker"
+                    class="p-1.5 rounded-full text-gray-400 hover:bg-gray-100 cursor-pointer">
+                    <svg class="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <p class="text-xs text-gray-500 mt-2.5 shrink-0">
+                Sélectionnez la ligne ouverte pour enregistrer une sortie partielle ou totale.
+            </p>
+
+            <div id="exitPickerList" class="mt-3 space-y-2 overflow-y-auto flex-1 pr-0.5">
+                <!-- Entrées ouvertes injectées ici -->
+            </div>
         </div>
     </div>
 
@@ -922,10 +952,8 @@
                 "PER / PERCO"
             ]);
 
-            // URL de secours GitHub Raw si l'application est ouverte en local ou en aperçu hors GitHub Pages
             const GITHUB_RAW_CSV_FALLBACK = "https://raw.githubusercontent.com/patdef31/suivi-portefeuille/main/cours.csv";
 
-            // Modèle CSV prêt à copier pour le dépôt GitHub
             const CSV_TEMPLATE_SAMPLE = [
                 "ISIN;Libelle;Cours",
                 "FR0010220475;ALSTOM;8.380",
@@ -941,7 +969,6 @@
                 "FR0013506730;VALLOUREC;15.475"
             ].join("\n");
 
-            // Dictionnaire local d'ISIN courants pour auto-complétion immédiate
             const KNOWN_ISINS = {
                 "FR0010220475": "ALSTOM",
                 "LU1829221024": "AMUNDI CORE NASDAQ-100 SWAP ETF ACC",
@@ -2084,8 +2111,47 @@
                 showToast("Entrée ajoutée avec succès");
             }
 
+            // 9B. SÉLECTEUR RAPIDE POUR "+ AJOUTER UNE SORTIE"
+            function openExitPickerModal() {
+                const openList = appState.positions
+                    .filter(p => p.status === "open" && (appState.activeEnvelope === "Toutes" || p.envelope === appState.activeEnvelope))
+                    .sort((a, b) => (b.entryDate || "").localeCompare(a.entryDate || ""));
+
+                const container = document.getElementById("exitPickerList");
+                if (openList.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-8 px-4 rounded-2xl border border-dashed border-gray-200 text-xs text-gray-400">
+                            Aucune entrée ouverte disponible pour enregistrer une sortie.
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = openList.map(pos => {
+                        const m = computeMetrics(pos);
+                        const cur = getCurrency(pos.envelope);
+                        const qtyStr = m.qty > 0 ? `${formatQtyNumber(m.qty)} dispo` : formatMoney(m.invested, cur);
+                        const unitStr = m.effectiveCurrentUnit > 0 ? ` • ${formatUnitPrice(m.effectiveCurrentUnit, cur)}` : "";
+                        return `
+                            <button type="button" data-action="select-exit-position" data-id="${escapeHTML(pos.id)}"
+                                class="w-full text-left bg-gray-50 hover:bg-teal-50/60 border border-[#E2E8F0] hover:border-[#007A63]/50 rounded-2xl p-3 transition cursor-pointer">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-[11px] font-extrabold text-[#007A63]">${escapeHTML(pos.envelope)}</span>
+                                    <span class="text-[11px] font-bold text-gray-700">${escapeHTML(qtyStr)}${escapeHTML(unitStr)}</span>
+                                </div>
+                                <div class="text-xs font-bold text-gray-900 uppercase truncate mt-1">${escapeHTML(pos.name)}</div>
+                                <div class="flex items-center justify-between text-[11px] text-gray-500 mt-1">
+                                    <span>${pos.code ? escapeHTML(pos.code) : formatDateFR(pos.entryDate)}</span>
+                                    <span>Actuel : <strong class="text-gray-800">${formatMoney(m.currentValue, cur)}</strong></span>
+                                </div>
+                            </button>
+                        `;
+                    }).join("");
+                }
+
+                document.getElementById("modalExitPicker").classList.remove("hidden");
+            }
+
             // 10. GESTION DE LA MODALE D'ÉDITION / CLÔTURE / HISTORIQUE
-            function openEditModal(posId) {
+            function openEditModal(posId, openCloseImmediately) {
                 const pos = appState.positions.find(p => p.id === posId);
                 if (!pos) return;
 
@@ -2156,6 +2222,10 @@
                 refreshEditPerfSummary();
 
                 document.getElementById("modalEdit").classList.remove("hidden");
+
+                if (openCloseImmediately && !isClosed) {
+                    toggleClosePanel(true);
+                }
             }
 
             function refreshEditPerfSummary() {
@@ -2317,10 +2387,12 @@
                 showToast(propagated > 0 ? `Modifié + propagé à ${propagated} autre(s) ligne(s)` : "Modifications enregistrées");
             }
 
-            function toggleClosePanel() {
+            function toggleClosePanel(forceOpen) {
                 const panel = document.getElementById("closePanel");
                 const isHidden = panel.classList.contains("hidden");
-                if (isHidden) {
+                const shouldOpen = forceOpen === true ? true : isHidden;
+
+                if (shouldOpen) {
                     const pos = appState.positions.find(p => p.id === appState.editingId);
                     if (!pos) return;
                     const m = computeMetrics(pos);
@@ -2339,10 +2411,11 @@
                         document.getElementById("closeQty").value = "";
                     }
 
-                    document.getElementById("closeUnitPrice").value = m.effectiveCurrentUnit > 0 ? m.effectiveCurrentUnit : "";
+                    document.getElementById("closeUnitPrice").value = m.effectiveCurrentUnit > 0 ? Number(m.effectiveCurrentUnit.toFixed(4)) : "";
                     document.getElementById("closeTotalAmount").value = Number(m.currentValue.toFixed(2));
                     updateClosePreview();
                     panel.classList.remove("hidden");
+                    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
                 } else {
                     panel.classList.add("hidden");
                 }
@@ -2786,6 +2859,17 @@
                         openAddModal();
                         break;
 
+                    case "open-exit-picker":
+                        openExitPickerModal();
+                        break;
+
+                    case "select-exit-position": {
+                        const id = target.getAttribute("data-id");
+                        closeModal("modalExitPicker");
+                        if (id) openEditModal(id, true);
+                        break;
+                    }
+
                     case "open-bulk-modal":
                         openBulkModal();
                         break;
@@ -2871,7 +2955,7 @@
 
                     case "edit-card": {
                         const id = target.getAttribute("data-id");
-                        if (id) openEditModal(id);
+                        if (id) openEditModal(id, false);
                         break;
                     }
 
@@ -3034,7 +3118,6 @@
             });
 
             document.getElementById("editBuyPrice").addEventListener("input", function () {
-                const qty = parseFloat(this.value) || 0;
                 const buyPrice = parseFloat(this.value) || 0;
                 const realQty = parseFloat(document.getElementById("editQty").value) || 0;
                 if (realQty > 0 && buyPrice > 0) {
@@ -3076,8 +3159,15 @@
                 refreshEditPerfSummary();
             });
 
+            // Synchronisation bidirectionnelle dans le panneau de sortie
             document.getElementById("closeQty").addEventListener("input", function () {
-                const sellQty = parseFloat(this.value) || 0;
+                const pos = appState.positions.find(p => p.id === appState.editingId);
+                const fullQty = parseFloat(document.getElementById("editQty").value) || (pos ? pos.qty : 0) || 0;
+                let sellQty = parseFloat(this.value) || 0;
+                if (fullQty > 0 && sellQty > fullQty) {
+                    sellQty = fullQty;
+                    this.value = Number(sellQty.toFixed(6));
+                }
                 const unitOut = parseFloat(document.getElementById("closeUnitPrice").value) || 0;
                 if (sellQty > 0 && unitOut > 0) {
                     document.getElementById("closeTotalAmount").value = Number((sellQty * unitOut).toFixed(2));
@@ -3088,19 +3178,47 @@
             document.getElementById("closeUnitPrice").addEventListener("input", function () {
                 const pos = appState.positions.find(p => p.id === appState.editingId);
                 if (!pos) return;
-                const sellQty = parseFloat(this.value) || 0;
-                const realSellQty = parseFloat(document.getElementById("closeQty").value) || 0;
-                const qty = parseFloat(document.getElementById("editQty").value) || 0;
-                const invested = parseFloat(document.getElementById("editInvested").value) || pos.investedAmount;
-                const buyPrice = parseFloat(document.getElementById("editBuyPrice").value) || pos.buyPrice || 0;
-                const effQty = realSellQty > 0 ? realSellQty : (qty > 0 ? qty : (buyPrice > 0 ? invested / buyPrice : 0));
                 const unitOut = parseFloat(this.value) || 0;
-                if (effQty > 0 && unitOut > 0) {
-                    document.getElementById("closeTotalAmount").value = Number((effQty * unitOut).toFixed(2));
+                const fullQty = parseFloat(document.getElementById("editQty").value) || pos.qty || 0;
+                const rawSellQty = parseFloat(document.getElementById("closeQty").value) || 0;
+                const effSellQty = rawSellQty > 0 ? rawSellQty : fullQty;
+                if (effSellQty > 0 && unitOut > 0) {
+                    document.getElementById("closeTotalAmount").value = Number((effSellQty * unitOut).toFixed(2));
                 }
                 updateClosePreview();
             });
-            document.getElementById("closeTotalAmount").addEventListener("input", updateClosePreview);
+
+            document.getElementById("closeTotalAmount").addEventListener("input", function () {
+                const pos = appState.positions.find(p => p.id === appState.editingId);
+                if (!pos) return;
+                const totalOut = parseFloat(this.value);
+                if (isNaN(totalOut) || totalOut < 0) {
+                    updateClosePreview();
+                    return;
+                }
+
+                const fullQty = parseFloat(document.getElementById("editQty").value) || pos.qty || 0;
+                const invested = parseFloat(document.getElementById("editInvested").value) || pos.investedAmount || 0;
+                const buyPrice = parseFloat(document.getElementById("editBuyPrice").value) || pos.buyPrice || 0;
+                const effFullQty = fullQty > 0 ? fullQty : (buyPrice > 0 ? invested / buyPrice : 0);
+
+                let unitOut = parseFloat(document.getElementById("closeUnitPrice").value) || 0;
+                if (unitOut <= 0) {
+                    const m = computeMetrics(pos);
+                    unitOut = m.effectiveCurrentUnit || m.effectiveBuyUnit || 0;
+                }
+
+                const closeQtyInput = document.getElementById("closeQty");
+                if (effFullQty > 0 && unitOut > 0 && !closeQtyInput.closest("#closeQtyGroup").classList.contains("hidden")) {
+                    let calcSellQty = totalOut / unitOut;
+                    if (calcSellQty > effFullQty) {
+                        calcSellQty = effFullQty;
+                    }
+                    closeQtyInput.value = Number(calcSellQty.toFixed(6));
+                }
+
+                updateClosePreview();
+            });
 
             document.getElementById("fileImportJson").addEventListener("change", function (e) {
                 const file = e.target.files && e.target.files[0];
@@ -3121,3 +3239,4 @@
     </script>
 </body>
 </html>
+
