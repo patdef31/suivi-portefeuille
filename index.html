@@ -7,7 +7,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Suivi Portefeuilles">
+    <meta name="apple-mobile-web-app-title" content="CVATP Portefeuilles">
     <title>CVATP — Suivi des portefeuilles</title>
 
     <!-- Tailwind CSS -->
@@ -18,33 +18,31 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Manifeste PWA embarqué -->
+    <!-- Manifeste PWA embarqué en Data URI -->
     <script>
         (function () {
             try {
+                const svgIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23007A63'/%3E%3Cpath d='M25 65h10V45H25v20zm20 0h10V30H45v35zm20 0h10V52H65v13z' fill='white'/%3E%3C/svg%3E";
                 const manifest = {
                     name: "CVATP — Suivi des portefeuilles",
-                    short_name: "Portefeuilles",
+                    short_name: "CVATP",
                     description: "Suivi personnel des entrées et sorties PEA, Linxea, PER, Crypto",
                     start_url: ".",
                     display: "standalone",
                     background_color: "#F4F6F5",
                     theme_color: "#007A63",
                     icons: [
-                        {
-                            src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23007A63'/%3E%3Cpath d='M25 65h10V45H25v20zm20 0h10V30H45v35zm20 0h10V52H65v13z' fill='white'/%3E%3C/svg%3E",
-                            sizes: "192x192",
-                            type: "image/svg+xml"
-                        }
+                        { src: svgIcon, sizes: "192x192", type: "image/svg+xml" },
+                        { src: svgIcon, sizes: "512x512", type: "image/svg+xml" }
                     ]
                 };
-                const blob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
+                const encoded = "data:application/manifest+json;charset=utf-8," + encodeURIComponent(JSON.stringify(manifest));
                 const link = document.createElement("link");
                 link.rel = "manifest";
-                link.href = URL.createObjectURL(blob);
+                link.href = encoded;
                 document.head.appendChild(link);
             } catch (e) {
-                console.warn("Manifeste PWA non initialisé:", e);
+                console.warn("Manifeste PWA non initialisé :", e);
             }
         })();
     </script>
@@ -100,12 +98,12 @@
                     <span class="pointer-events-none">Cours / VL</span>
                 </button>
 
-                <button type="button" data-action="refresh-crypto"
-                    class="px-2.5 py-1.5 rounded-xl text-[#007A63] bg-teal-50/80 hover:bg-teal-100 border border-teal-200 text-xs font-semibold flex items-center gap-1 active:scale-95 transition cursor-pointer">
-                    <svg id="iconRefreshCrypto" class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+                <button type="button" data-action="refresh-all-market"
+                    class="px-2.5 py-1.5 rounded-xl text-[#007A63] bg-teal-50/90 hover:bg-teal-100 border border-teal-200 text-xs font-bold flex items-center gap-1 active:scale-95 transition cursor-pointer">
+                    <svg id="iconRefreshMarket" class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                     </svg>
-                    <span class="pointer-events-none">Auto</span>
+                    <span class="pointer-events-none">Actualiser</span>
                 </button>
 
                 <button type="button" data-action="open-menu-modal" aria-label="Menu"
@@ -121,7 +119,7 @@
     <!-- ==================== CONTENU PRINCIPAL ==================== -->
     <main class="max-w-lg w-full mx-auto px-4 pt-5 flex-1">
 
-        <!-- Titre -->
+        <!-- Titre & état de synchronisation -->
         <div class="text-center mb-4">
             <h1 class="text-[22px] sm:text-2xl font-extrabold text-gray-900 leading-tight tracking-tight">
                 Suivi des portefeuilles
@@ -130,7 +128,7 @@
                 ENTRÉES & SORTIES
             </p>
             <p id="lblSyncStatus" class="text-[11px] text-gray-400 mt-0.5">
-                Sauvegarde locale active
+                Prêt (cours.csv GitHub + Crypto)
             </p>
         </div>
 
@@ -242,6 +240,7 @@
                     <option value="perf_desc">Plus-value %</option>
                     <option value="pnl_desc">Plus-value montant</option>
                     <option value="inv_desc">Montant investi</option>
+                    <option value="name_asc">Nom A-Z</option>
                 </select>
             </div>
         </div>
@@ -293,8 +292,8 @@
     </button>
 
     <!-- ==================== NOTIFICATION TOAST ==================== -->
-    <div id="toastContainer" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-200 transform -translate-y-2">
-        <div class="bg-gray-900 text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-lg whitespace-nowrap">
+    <div id="toastContainer" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-200 transform -translate-y-2 max-w-[92vw]">
+        <div class="bg-gray-900 text-white text-xs font-semibold px-4 py-2.5 rounded-2xl shadow-lg text-center leading-snug">
             <span id="toastMessage">Message</span>
         </div>
     </div>
@@ -326,12 +325,12 @@
                     </select>
                 </div>
 
-                <!-- BLOC COMMUN ISIN + NOM POUR ENVELOPPES EUR (ASSURANCE-VIE / PER / PEA) -->
+                <!-- BLOC COMMUN ISIN + NOM POUR ENVELOPPES EUR -->
                 <div id="addCommonEurHeader" class="space-y-3">
                     <div>
-                        <label for="addEurIsin" class="block text-xs font-semibold text-gray-700 mb-1">Code ISIN <span class="text-gray-400 font-normal">(optionnel)</span></label>
+                        <label for="addEurIsin" class="block text-xs font-semibold text-gray-700 mb-1">Code ISIN <span class="text-gray-400 font-normal">(auto-complétion)</span></label>
                         <div class="flex gap-2">
-                            <input type="text" id="addEurIsin" maxlength="12" placeholder="Ex: FR0000120073 ou LU1681045370"
+                            <input type="text" id="addEurIsin" maxlength="12" placeholder="Ex: FR0010220475 ou LU1829221024"
                                 class="flex-1 bg-gray-50 border border-[#E2E8F0] rounded-xl px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:border-[#007A63] focus:bg-white">
                             <button type="button" data-action="lookup-isin"
                                 class="shrink-0 px-3 py-2 bg-teal-50 text-[#007A63] border border-teal-200 rounded-xl text-xs font-bold hover:bg-teal-100 active:scale-95 transition cursor-pointer">
@@ -343,7 +342,7 @@
 
                     <div>
                         <label id="lblAddEurName" for="addEurName" class="block text-xs font-semibold text-gray-700 mb-1">Nom du support *</label>
-                        <input type="text" id="addEurName" placeholder="Ex: AMUNDI MSCI EMERGING MARKETS"
+                        <input type="text" id="addEurName" placeholder="Ex: AMUNDI CORE NASDAQ-100 SWAP ETF ACC"
                             class="w-full bg-gray-50 border border-[#E2E8F0] rounded-xl px-3 py-2 text-sm uppercase focus:outline-none focus:border-[#007A63] focus:bg-white">
                     </div>
                 </div>
@@ -369,7 +368,7 @@
                     </div>
                 </div>
 
-                <!-- FORMULAIRE ENVELOPPES ASSURANCE-VIE / PER : MONTANT INVESTI + VL -->
+                <!-- FORMULAIRE ASSURANCE-VIE / PER : MONTANT INVESTI + VL -->
                 <div id="addFieldsNav" class="space-y-3">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
@@ -379,7 +378,7 @@
                         </div>
                         <div>
                             <label for="addEurUnitPrice" class="block text-xs font-semibold text-gray-700 mb-1">VL d'achat (€) <span class="text-gray-400 font-normal">(opt.)</span></label>
-                            <input type="number" step="any" min="0" id="addEurUnitPrice" placeholder="Ex: 7.01"
+                            <input type="number" step="any" min="0" id="addEurUnitPrice" placeholder="Ex: 95.16"
                                 class="w-full bg-gray-50 border border-[#E2E8F0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63] focus:bg-white">
                         </div>
                     </div>
@@ -396,7 +395,7 @@
                     </div>
                 </div>
 
-                <!-- FORMULAIRE CRYPTO (USDC) : QUANTITÉ + COURS OU MONTANT -->
+                <!-- FORMULAIRE CRYPTO (USDC) : MONTANT INVESTI + COURS OU QUANTITÉ -->
                 <div id="addFieldsCrypto" class="hidden space-y-3 bg-gray-50 p-3.5 rounded-2xl border border-[#E2E8F0]">
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1.5">Cryptomonnaie rapide</label>
@@ -435,19 +434,19 @@
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label for="addCryptoQty" class="block text-xs font-semibold text-gray-700 mb-1">Quantité de jetons *</label>
-                            <input type="number" step="any" min="0" id="addCryptoQty" placeholder="Ex: 0.05"
+                            <label for="addCryptoInvested" class="block text-xs font-semibold text-gray-700 mb-1">Montant investi (USDC) *</label>
+                            <input type="number" step="any" min="0" id="addCryptoInvested" placeholder="Ex: 500"
                                 class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#007A63]">
                         </div>
                         <div>
-                            <label for="addCryptoInvested" class="block text-xs font-semibold text-gray-700 mb-1">Ou montant (USDC)</label>
-                            <input type="number" step="any" min="0" id="addCryptoInvested" placeholder="Ex: 500"
+                            <label for="addCryptoQty" class="block text-xs font-semibold text-gray-700 mb-1">Ou quantité jetons</label>
+                            <input type="number" step="any" min="0" id="addCryptoQty" placeholder="Ex: 0.05"
                                 class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#007A63]">
                         </div>
                     </div>
 
                     <div>
-                        <label for="addCryptoUnitPrice" class="block text-xs font-semibold text-gray-700 mb-1">Prix unitaire d'achat (USDC)</label>
+                        <label for="addCryptoUnitPrice" class="block text-xs font-semibold text-gray-700 mb-1">Prix d'achat unitaire (USDC)</label>
                         <div class="flex gap-2">
                             <input type="number" step="any" min="0" id="addCryptoUnitPrice" placeholder="Ex: 91000"
                                 class="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63]">
@@ -457,7 +456,7 @@
                             </button>
                         </div>
                         <p id="lblAddCryptoPreview" class="text-[11px] font-semibold text-[#007A63] mt-1">
-                            Montant investi : — • Quantité : —
+                            Montant investi : — • Jetons : —
                         </p>
                     </div>
                 </div>
@@ -531,7 +530,7 @@
                     </div>
                 </div>
 
-                <!-- Quantité (Actions / Parts / Jetons) + Prix unitaire d'achat + Montant investi -->
+                <!-- Quantité + Prix unitaire d'achat + Montant investi -->
                 <div class="grid grid-cols-3 gap-2">
                     <div>
                         <label id="lblEditQty" for="editQty" class="block text-[11px] font-semibold text-gray-700 mb-1">Quantité</label>
@@ -570,7 +569,7 @@
                         <input type="checkbox" id="chkPropagate" checked
                             class="mt-0.5 w-4 h-4 rounded text-[#007A63] border-teal-300">
                         <span id="lblPropagateText" class="text-[11px] font-semibold text-[#007A63] leading-snug">
-                            Appliquer cette VL/cours aux autres entrées de cette valeur
+                            Appliquer ce cours unitaire aux autres entrées de cette valeur
                         </span>
                     </label>
 
@@ -605,7 +604,7 @@
 
                     <button type="button" id="btnShowClosePanel" data-action="toggle-close-panel"
                         class="w-full py-2.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 font-bold text-xs hover:bg-amber-100 transition cursor-pointer">
-                        Clôturer / Sortir la position
+                        Clôturer / Enregistrer une sortie
                     </button>
 
                     <button type="button" id="btnReopenPosition" data-action="reopen-position"
@@ -658,17 +657,24 @@
                 </div>
             </form>
 
-            <!-- Panneau Clôture (Sortie) -->
+            <!-- Panneau Clôture (Sortie totale ou partielle) -->
             <div id="closePanel" class="hidden mt-4 pt-4 border-t-2 border-dashed border-amber-200 space-y-3 bg-amber-50/40 p-3.5 rounded-2xl">
                 <div class="flex items-center justify-between">
                     <h4 class="text-xs font-extrabold uppercase tracking-wide text-amber-900">Clôturer et figer en Sortie</h4>
                     <button type="button" data-action="toggle-close-panel" class="text-xs text-gray-500 underline cursor-pointer">Fermer</button>
                 </div>
 
-                <div>
-                    <label for="closeDate" class="block text-xs font-semibold text-gray-700 mb-1">Date de sortie *</label>
-                    <input type="date" id="closeDate"
-                        class="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63]">
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label for="closeDate" class="block text-xs font-semibold text-gray-700 mb-1">Date de sortie *</label>
+                        <input type="date" id="closeDate"
+                            class="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63]">
+                    </div>
+                    <div id="closeQtyGroup">
+                        <label id="lblCloseQty" for="closeQty" class="block text-xs font-semibold text-gray-700 mb-1">Quantité vendue</label>
+                        <input type="number" step="any" min="0" id="closeQty"
+                            class="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#007A63]">
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2.5">
@@ -729,11 +735,11 @@
         </div>
     </div>
 
-    <!-- ==================== MODALE 4 : MENU PRINCIPAL (JOURNAL / EXPORT / IMPORT) ==================== -->
+    <!-- ==================== MODALE 4 : MENU PRINCIPAL (GITHUB COURS.CSV / JOURNAL / SAUVEGARDE) ==================== -->
     <div id="modalMenu" class="fixed inset-0 z-40 hidden bg-black/45 backdrop-blur-[1px] flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-3.5 max-h-[90vh] overflow-y-auto">
+        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-3.5 max-h-[92vh] overflow-y-auto">
             <div class="flex items-center justify-between pb-2 border-b border-gray-100">
-                <h3 class="text-base font-bold text-gray-900">Menu & Sauvegarde</h3>
+                <h3 class="text-base font-bold text-gray-900">Menu & Configuration</h3>
                 <button type="button" data-action="close-modal" data-modal="modalMenu"
                     class="p-1.5 rounded-full text-gray-400 hover:bg-gray-100 cursor-pointer">
                     <svg class="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -742,11 +748,36 @@
                 </button>
             </div>
 
-            <p class="text-xs text-gray-500 leading-relaxed">
-                Vos données sont enregistrées localement sur votre téléphone. Exportez régulièrement une sauvegarde JSON pour sécuriser votre suivi.
-            </p>
+            <!-- Bloc Fichier GitHub cours.csv -->
+            <div class="p-3.5 rounded-2xl bg-teal-50/70 border border-teal-200 space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-extrabold text-[#007A63] flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span>Fichier GitHub (./cours.csv)</span>
+                    </span>
+                    <span class="text-[10px] font-bold bg-white text-[#007A63] border border-teal-200 px-2 py-0.5 rounded-full">GitHub Pages</span>
+                </div>
 
-            <div class="space-y-2.5">
+                <div class="bg-white/95 border border-teal-200/80 rounded-xl p-2.5 text-[11px] text-gray-700 space-y-1">
+                    <div class="font-bold text-gray-800">État du fichier cours.csv</div>
+                    <div id="menuCsvDiagText" class="text-gray-600 leading-snug">Aucun chargement exécuté pour le moment.</div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" data-action="test-github-csv"
+                        class="py-2 rounded-xl bg-[#007A63] text-white font-bold text-[11px] hover:bg-[#006250] transition cursor-pointer">
+                        Tester cours.csv
+                    </button>
+                    <button type="button" data-action="copy-csv-template"
+                        class="py-2 rounded-xl bg-white text-[#007A63] border border-teal-200 font-bold text-[11px] hover:bg-teal-50 transition cursor-pointer">
+                        Copier modèle CSV
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-2">
                 <button type="button" data-action="open-journal-modal"
                     class="w-full flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 font-bold text-sm hover:bg-slate-100 transition cursor-pointer">
                     <span class="flex items-center gap-2 pointer-events-none">
@@ -759,9 +790,9 @@
                 </button>
 
                 <button type="button" data-action="export-json"
-                    class="w-full flex items-center justify-between p-3.5 rounded-2xl bg-teal-50/70 border border-teal-200 text-[#007A63] font-bold text-sm hover:bg-teal-100/70 transition cursor-pointer">
+                    class="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-[#E2E8F0] text-gray-900 font-bold text-sm hover:bg-gray-100 transition cursor-pointer">
                     <span class="pointer-events-none">Exporter sauvegarde (.JSON)</span>
-                    <svg class="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 text-[#007A63] pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                     </svg>
                 </button>
@@ -796,7 +827,7 @@
 
                 <button type="button" data-action="export-csv"
                     class="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-[#E2E8F0] text-gray-800 font-semibold text-sm hover:bg-gray-100 transition cursor-pointer">
-                    <span class="pointer-events-none">Exporter tableau (.CSV)</span>
+                    <span class="pointer-events-none">Exporter portefeuilles (.CSV)</span>
                     <svg class="w-5 h-5 text-gray-500 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
@@ -874,7 +905,7 @@
         </div>
     </div>
 
-    <!-- ==================== SCRIPT APPLICATIF ROBUSTE ==================== -->
+    <!-- ==================== SCRIPT APPLICATIF ==================== -->
     <script>
         (function () {
             "use strict";
@@ -884,12 +915,45 @@
             const STORAGE_JOURNAL_KEY = "cvatp_journal_v1";
             const LEGACY_KEYS = ["cvatp_portfolio_v2", "cvatp_portfolio_v1"];
 
-            // Dictionnaire local d'ISIN (Assurance-vie, PER, ETF et actions PEA courants)
+            const EUR_ENVELOPES = new Set([
+                "Linxea Spirit",
+                "Linxea Avenir",
+                "PEA",
+                "PER / PERCO"
+            ]);
+
+            // URL de secours GitHub Raw si l'application est ouverte en local ou en aperçu hors GitHub Pages
+            const GITHUB_RAW_CSV_FALLBACK = "https://raw.githubusercontent.com/patdef31/suivi-portefeuille/main/cours.csv";
+
+            // Modèle CSV prêt à copier pour le dépôt GitHub
+            const CSV_TEMPLATE_SAMPLE = [
+                "ISIN;Libelle;Cours",
+                "FR0010220475;ALSTOM;8.380",
+                "LU1829221024;AMUNDI CORE NASDAQ-100 SWAP ETF ACC;95.1800",
+                "LU1681045370;AMUNDI IS MSCI EMERG MKTS SWP ETF EURACC;4.69",
+                "LU1900066207;AMUNDI MSCI BRAZIL ETF ACC;19.51",
+                "LU1900066033;AMUNDI MSCI SEMICONDUCTORS ETF ACC;81.5000",
+                "FR0013416716;AMUNDI PHYSICAL GOLD ETC C;128.1000",
+                "LU1681048804;AMUNDI S&P 500 SWAP ETF EUR ACC;71.90",
+                "LU1834983477;AMUNDI STOXX EUROPE 600 BANKS ETF ACC;65.7300",
+                "FR0000131906;RENAULT;26.130",
+                "DE000ENER6Y0;SIEMENS ENERGY;118.320",
+                "FR0013506730;VALLOUREC;15.475"
+            ].join("\n");
+
+            // Dictionnaire local d'ISIN courants pour auto-complétion immédiate
             const KNOWN_ISINS = {
-                "LU1681045370": "AMUNDI MSCI EMERGING MARKETS UCITS ETF",
-                "LU1829221024": "AMUNDI NASDAQ-100 UCITS ETF",
-                "LU1834983477": "MULTI UNITS LUXEMBOURG - AMUNDI STOXX EUROPE 600",
-                "LU1900066207": "AMUNDI MSCI BRAZIL UCITS ETF",
+                "FR0010220475": "ALSTOM",
+                "LU1829221024": "AMUNDI CORE NASDAQ-100 SWAP ETF ACC",
+                "LU1681045370": "AMUNDI IS MSCI EMERG MKTS SWP ETF EURACC",
+                "LU1900066207": "AMUNDI MSCI BRAZIL ETF ACC",
+                "LU1900066033": "AMUNDI MSCI SEMICONDUCTORS ETF ACC",
+                "FR0013416716": "AMUNDI PHYSICAL GOLD ETC C",
+                "LU1681048804": "AMUNDI S&P 500 SWAP ETF EUR ACC",
+                "LU1834983477": "AMUNDI STOXX EUROPE 600 BANKS ETF ACC",
+                "FR0000131906": "RENAULT",
+                "DE000ENER6Y0": "SIEMENS ENERGY",
+                "FR0013506730": "VALLOUREC",
                 "LU1681043599": "AMUNDI MSCI WORLD UCITS ETF (CW8)",
                 "IE0002XZSHO1": "ISHARES MSCI WORLD SWAP PEA UCITS ETF (WPEA)",
                 "FR0011550185": "BNP PARIBAS EASY S&P 500 UCITS ETF (ESE)",
@@ -944,7 +1008,15 @@
                 journal: [],
                 activeEnvelope: "Toutes",
                 activeJournalFilter: "ALL",
-                editingId: null
+                editingId: null,
+                lastCsvDiag: {
+                    timestamp: null,
+                    source: "—",
+                    rowsParsed: 0,
+                    validIsinCourses: 0,
+                    matchedOpenEntries: 0,
+                    error: null
+                }
             };
 
             // 3. UTILITAIRES DE FORMATAGE & CALCULS
@@ -1075,7 +1147,7 @@
                 toastTimer = setTimeout(() => {
                     box.classList.remove("opacity-100", "translate-y-0");
                     box.classList.add("opacity-0", "-translate-y-2");
-                }, 2600);
+                }, 4000);
             }
 
             // 5. PERSISTANCE LOCALSTORAGE & HISTORIQUE
@@ -1108,7 +1180,7 @@
                         }
                     }
                 } catch (err) {
-                    console.error("Erreur chargement stockage local:", err);
+                    console.error("Erreur chargement stockage local :", err);
                 }
             }
 
@@ -1172,7 +1244,360 @@
                 if (appState.journal.length > 150) appState.journal.length = 150;
             }
 
-            // 6. RENDU DU TABLEAU DE BORD & DES CARTES
+            // 6. LECTURE & PARSEUR DU FICHIER GITHUB ./cours.csv
+            function parseCSVLine(line, delimiter) {
+                const cells = [];
+                let current = "";
+                let inQuotes = false;
+
+                for (let i = 0; i < line.length; i++) {
+                    const ch = line[i];
+                    if (ch === '"') {
+                        if (inQuotes && line[i + 1] === '"') {
+                            current += '"';
+                            i++;
+                        } else {
+                            inQuotes = !inQuotes;
+                        }
+                    } else if (ch === delimiter && !inQuotes) {
+                        cells.push(current.trim());
+                        current = "";
+                    } else {
+                        current += ch;
+                    }
+                }
+                cells.push(current.trim());
+                return cells;
+            }
+
+            function parseDecimalNumber(rawVal) {
+                if (rawVal === null || rawVal === undefined) return NaN;
+                let cleaned = String(rawVal)
+                    .replace(/^"|"$/g, "")
+                    .replace(/[\s\u00A0\u202F€$]/g, "")
+                    .replace(/USDC/gi, "")
+                    .trim();
+                if (!cleaned || cleaned === "-" || cleaned.startsWith("#")) return NaN;
+
+                if (cleaned.includes(",") && cleaned.includes(".")) {
+                    cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+                } else if (cleaned.includes(",")) {
+                    cleaned = cleaned.replace(",", ".");
+                }
+
+                const num = parseFloat(cleaned);
+                return !isNaN(num) && isFinite(num) ? num : NaN;
+            }
+
+            function parseQuotesCSV(csvText) {
+                if (!csvText || typeof csvText !== "string") {
+                    return { totalRows: 0, records: [] };
+                }
+
+                const trimmedHead = csvText.trim().slice(0, 120).toLowerCase();
+                if (trimmedHead.startsWith("<!doctype html") || trimmedHead.startsWith("<html")) {
+                    return { totalRows: 0, records: [], isHtml: true };
+                }
+
+                const lines = csvText
+                    .replace(/^\uFEFF/, "")
+                    .split(/\r?\n/)
+                    .map(l => l.trim())
+                    .filter(Boolean);
+
+                if (lines.length === 0) {
+                    return { totalRows: 0, records: [] };
+                }
+
+                const headerSample = lines[0].replace(/"[^"]*"/g, "");
+                const semiCount = (headerSample.match(/;/g) || []).length;
+                const commaCount = (headerSample.match(/,/g) || []).length;
+                const delimiter = semiCount > commaCount ? ";" : ",";
+
+                const firstRow = parseCSVLine(lines[0], delimiter).map(h =>
+                    h.replace(/^"|"$/g, "")
+                        .toLowerCase()
+                        .normalize("NFD")
+                        .replace(/[\u0300-\u036f]/g, "")
+                        .trim()
+                );
+
+                let idxIsin = firstRow.findIndex(h => h.includes("isin") || h === "code");
+                let idxLibelle = firstRow.findIndex(h => h.includes("libelle") || h.includes("nom") || h.includes("name") || h.includes("support"));
+                let idxCours = firstRow.findIndex(h => h.includes("cours") || h.includes("prix") || h.includes("price") || h === "vl" || h.includes("dernier"));
+
+                let startRow = 1;
+                if (idxIsin === -1 && idxCours === -1) {
+                    startRow = 0;
+                    if (firstRow.length >= 3) {
+                        idxIsin = 0;
+                        idxLibelle = 1;
+                        idxCours = 2;
+                    } else if (firstRow.length === 2) {
+                        idxIsin = 0;
+                        idxCours = 1;
+                    }
+                }
+
+                const dataLinesCount = Math.max(0, lines.length - startRow);
+                const records = [];
+
+                for (let i = startRow; i < lines.length; i++) {
+                    const cols = parseCSVLine(lines[i], delimiter);
+                    const rawIsin = idxIsin >= 0 && cols[idxIsin] !== undefined
+                        ? cols[idxIsin].replace(/^"|"$/g, "").replace(/\s+/g, "").trim().toUpperCase()
+                        : "";
+                    const rawLibelle = idxLibelle >= 0 && cols[idxLibelle] !== undefined
+                        ? cols[idxLibelle].replace(/^"|"$/g, "").replace(/\s+/g, " ").trim().toUpperCase()
+                        : "";
+                    const rawCours = idxCours >= 0 && cols[idxCours] !== undefined
+                        ? cols[idxCours]
+                        : "";
+
+                    const price = parseDecimalNumber(rawCours);
+                    if (!isNaN(price) && price > 0 && (rawIsin || rawLibelle)) {
+                        records.push({
+                            isin: rawIsin,
+                            libelle: rawLibelle,
+                            price
+                        });
+                    }
+                }
+
+                return { totalRows: dataLinesCount, records };
+            }
+
+            async function fetchTextWithTimeout(url, timeoutMs) {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), timeoutMs || 6000);
+                try {
+                    const resp = await fetch(url, {
+                        cache: "no-store",
+                        signal: controller.signal
+                    });
+                    if (!resp.ok) {
+                        throw new Error(`HTTP ${resp.status}`);
+                    }
+                    return await resp.text();
+                } finally {
+                    clearTimeout(timer);
+                }
+            }
+
+            async function fetchGitHubCoursesCSV() {
+                const ts = Date.now();
+                const sources = [
+                    { label: "./cours.csv (GitHub Pages)", url: `./cours.csv?t=${ts}` },
+                    { label: "GitHub Raw (patdef31)", url: `${GITHUB_RAW_CSV_FALLBACK}?t=${ts}` }
+                ];
+
+                let lastErr = "Fichier cours.csv introuvable";
+
+                for (const src of sources) {
+                    try {
+                        const csvText = await fetchTextWithTimeout(src.url, 6000);
+                        const parsed = parseQuotesCSV(csvText);
+                        if (parsed.isHtml) {
+                            lastErr = `${src.label} a renvoyé une page HTML (fichier cours.csv absent ?)`;
+                            continue;
+                        }
+                        if (parsed.totalRows > 0 || parsed.records.length > 0) {
+                            return {
+                                ok: true,
+                                source: src.label,
+                                rowsParsed: parsed.totalRows,
+                                records: parsed.records,
+                                error: null
+                            };
+                        }
+                        lastErr = `${src.label} est vide`;
+                    } catch (err) {
+                        lastErr = `${src.label} : ${err && err.message ? err.message : "inaccessible"}`;
+                    }
+                }
+
+                return {
+                    ok: false,
+                    source: "Non trouvé",
+                    rowsParsed: 0,
+                    records: [],
+                    error: lastErr
+                };
+            }
+
+            function updateCsvDiagUI() {
+                const el = document.getElementById("menuCsvDiagText");
+                if (!el) return;
+                const d = appState.lastCsvDiag;
+                if (!d || !d.timestamp) {
+                    el.textContent = "Aucun chargement exécuté pour le moment.";
+                    return;
+                }
+                if (d.error) {
+                    el.innerHTML = `<span class="text-red-600 font-semibold">${escapeHTML(d.timestamp)} :</span> ${escapeHTML(d.error)}`;
+                } else {
+                    el.innerHTML = `${escapeHTML(d.timestamp)} • <strong>${escapeHTML(d.source)}</strong><br>Supports lus : <strong>${d.validIsinCourses}</strong> / ${d.rowsParsed} ligne(s) • Entrées EUR mises à jour : <strong>${d.matchedOpenEntries}</strong>`;
+                }
+            }
+
+            // 7. ACTUALISATION COMBINÉE (./cours.csv GITHUB + CRYPTO)
+            async function fetchCryptoPriceUSD(ticker) {
+                const clean = (ticker || "").trim().toUpperCase();
+                if (!clean) return null;
+
+                try {
+                    const symbol = `${clean}USDC`;
+                    const raw = await fetchTextWithTimeout(`https://api.binance.com/api/v3/ticker/price?symbol=${encodeURIComponent(symbol)}`, 4500);
+                    const data = JSON.parse(raw);
+                    const p = parseFloat(data && data.price);
+                    if (!isNaN(p) && p > 0) return p;
+                } catch (e) {
+                    // Fallback CoinGecko
+                }
+
+                const cgId = COINGECKO_IDS[clean] || clean.toLowerCase();
+                try {
+                    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(cgId)}&vs_currencies=usd`;
+                    const raw = await fetchTextWithTimeout(url, 5500);
+                    const data = JSON.parse(raw);
+                    if (data && data[cgId] && typeof data[cgId].usd === "number" && data[cgId].usd > 0) {
+                        return data[cgId].usd;
+                    }
+                } catch (e) {
+                    return null;
+                }
+                return null;
+            }
+
+            async function handleFullMarketRefresh(onlyTestCsv) {
+                const icon = document.getElementById("iconRefreshMarket");
+                if (icon) icon.classList.add("animate-spin-fast");
+
+                showToast(onlyTestCsv ? "Lecture de ./cours.csv..." : "Actualisation cours.csv + Crypto...");
+
+                const openPositions = appState.positions.filter(p => p.status === "open");
+                const openEurPositions = openPositions.filter(p => EUR_ENVELOPES.has(p.envelope));
+                const openCryptos = openPositions.filter(p => p.envelope === "Crypto");
+                const cryptoTickers = onlyTestCsv
+                    ? []
+                    : [...new Set(openCryptos.map(p => (p.code || p.name).trim().toUpperCase()))];
+
+                const [csvRes, cryptoPricesArr] = await Promise.all([
+                    fetchGitHubCoursesCSV(),
+                    Promise.all(cryptoTickers.map(async tk => ({ tk, price: await fetchCryptoPriceUSD(tk) })))
+                ]);
+
+                const isinPriceMap = new Map();
+                let validIsinCourses = 0;
+
+                csvRes.records.forEach(rec => {
+                    const cleanIsin = (rec.isin || "").trim().toUpperCase();
+                    if (cleanIsin && typeof rec.price === "number" && rec.price > 0) {
+                        isinPriceMap.set(cleanIsin, rec.price);
+                        validIsinCourses++;
+                    }
+                });
+
+                let matchedOpenEntries = 0;
+
+                openEurPositions.forEach(pos => {
+                    const posIsin = (pos.code || "").trim().toUpperCase();
+                    if (!posIsin || !isinPriceMap.has(posIsin)) return;
+
+                    const newUnitPrice = isinPriceMap.get(posIsin);
+                    const prevPrice = Number(pos.currentPrice) || 0;
+                    const currency = getCurrency(pos.envelope);
+
+                    pos.currentPrice = newUnitPrice;
+
+                    if (pos.qty && Number(pos.qty) > 0) {
+                        pos.manualCurrentValue = null;
+                    } else if (pos.buyPrice && Number(pos.buyPrice) > 0 && pos.investedAmount > 0) {
+                        pos.qty = pos.investedAmount / Number(pos.buyPrice);
+                        pos.manualCurrentValue = null;
+                    } else if (pos.investedAmount > 0) {
+                        pos.buyPrice = newUnitPrice;
+                        pos.qty = pos.investedAmount / newUnitPrice;
+                        pos.manualCurrentValue = null;
+                    }
+
+                    if (Math.abs(newUnitPrice - prevPrice) > 1e-7) {
+                        recordHistory(pos, {
+                            type: "PRICE",
+                            source: "cours.csv",
+                            label: "VL / Cours actualisé",
+                            detail: prevPrice > 0
+                                ? `${formatUnitPrice(prevPrice, currency)} → ${formatUnitPrice(newUnitPrice, currency)}`
+                                : `Nouveau cours : ${formatUnitPrice(newUnitPrice, currency)}`
+                        });
+                    }
+                    matchedOpenEntries++;
+                });
+
+                let updatedCrypto = 0;
+                if (!onlyTestCsv && cryptoPricesArr.length > 0) {
+                    const cryptoMap = new Map();
+                    cryptoPricesArr.forEach(item => {
+                        if (item.price && item.price > 0) cryptoMap.set(item.tk, item.price);
+                    });
+
+                    openCryptos.forEach(pos => {
+                        const tk = (pos.code || pos.name).trim().toUpperCase();
+                        if (cryptoMap.has(tk)) {
+                            const nextP = cryptoMap.get(tk);
+                            const prevP = Number(pos.currentPrice) || 0;
+                            pos.currentPrice = nextP;
+                            if (!pos.buyPrice || pos.buyPrice <= 0) {
+                                pos.buyPrice = nextP;
+                                pos.qty = pos.investedAmount > 0 ? pos.investedAmount / nextP : 0;
+                            }
+                            pos.manualCurrentValue = null;
+
+                            if (Math.abs(nextP - prevP) > 1e-7) {
+                                recordHistory(pos, {
+                                    type: "PRICE",
+                                    source: "Crypto API",
+                                    label: "Cours Crypto actualisé",
+                                    detail: prevP > 0
+                                        ? `${formatUnitPrice(prevP, "USDC")} → ${formatUnitPrice(nextP, "USDC")}`
+                                        : `Nouveau cours : ${formatUnitPrice(nextP, "USDC")}`
+                                });
+                            }
+                            updatedCrypto++;
+                        }
+                    });
+                }
+
+                const nowStr = getNowTimestampFR();
+                appState.lastCsvDiag = {
+                    timestamp: nowStr,
+                    source: csvRes.source,
+                    rowsParsed: csvRes.rowsParsed,
+                    validIsinCourses,
+                    matchedOpenEntries,
+                    error: csvRes.error
+                };
+
+                if (icon) icon.classList.remove("animate-spin-fast");
+                saveData();
+                renderAll();
+                updateCsvDiagUI();
+
+                const nowTime = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+                document.getElementById("lblSyncStatus").textContent = csvRes.ok
+                    ? `cours.csv (${validIsinCourses} ISIN) • Actualisé à ${nowTime}`
+                    : `cours.csv introuvable • Crypto actualisé à ${nowTime}`;
+
+                if (!csvRes.ok) {
+                    showToast(`${csvRes.error} • ${updatedCrypto} crypto(s) mise(s) à jour`);
+                } else if (onlyTestCsv) {
+                    showToast(`cours.csv OK : ${validIsinCourses} ISIN lus, ${matchedOpenEntries} position(s) EUR mise(s) à jour`);
+                } else {
+                    showToast(`Actualisé : ${matchedOpenEntries} support(s) EUR + ${updatedCrypto} crypto(s)`);
+                }
+            }
+
+            // 8. RENDU DU TABLEAU DE BORD & DES CARTES
             function renderAll() {
                 const query = (document.getElementById("searchInput").value || "").trim().toLowerCase();
                 const sortBy = document.getElementById("sortSelect").value;
@@ -1210,6 +1635,9 @@
                     }
                     if (sortBy === "inv_desc") {
                         return mB.invested - mA.invested;
+                    }
+                    if (sortBy === "name_asc") {
+                        return (a.name || "").localeCompare(b.name || "", "fr");
                     }
                     const dA = a.status === "closed" ? (a.exitDate || a.entryDate) : a.entryDate;
                     const dB = b.status === "closed" ? (b.exitDate || b.entryDate) : b.entryDate;
@@ -1323,9 +1751,9 @@
                         let colorCls = "text-indigo-700 bg-indigo-50 border-indigo-200";
                         if (m.effectiveBuyUnit > 0) {
                             const diff = m.effectiveCurrentUnit - m.effectiveBuyUnit;
-                            if (diff > 0.00001) colorCls = "text-emerald-800 bg-emerald-50 border-emerald-200";
-                            else if (diff < -0.00001) colorCls = "text-rose-800 bg-rose-50 border-rose-200";
-                            else colorCls = "text-amber-800 bg-amber-50 border-amber-200";
+                            if (diff > 0.00001) colorCls = "text-emerald-700 bg-emerald-50 border-emerald-200";
+                            else if (diff < -0.00001) colorCls = "text-rose-700 bg-rose-50 border-rose-200";
+                            else colorCls = "text-amber-700 bg-amber-50 border-amber-200";
                         }
                         curBadge = `<span class="text-[10px] font-bold ${colorCls} border px-1.5 py-0.5 rounded">${curLabel} : ${formatUnitPrice(m.effectiveCurrentUnit, currency)}</span>`;
                     } else {
@@ -1386,7 +1814,7 @@
                 }).join("");
             }
 
-            // 7. GESTION DE LA MODALE D'AJOUT ("NOUVELLE ENTRÉE")
+            // 9. GESTION DE LA MODALE D'AJOUT ("NOUVELLE ENTRÉE")
             function openAddModal() {
                 document.getElementById("formAdd").reset();
                 document.getElementById("addEnvelope").value = appState.activeEnvelope !== "Toutes" ? appState.activeEnvelope : "Linxea Spirit";
@@ -1394,7 +1822,7 @@
                 document.getElementById("lblIsinStatus").classList.add("hidden");
                 document.getElementById("lblAddPeaTotalPreview").textContent = "0,00 €";
                 document.getElementById("lblAddEurPreview").textContent = "Parts : —";
-                document.getElementById("lblAddCryptoPreview").textContent = "Montant investi : — • Quantité : —";
+                document.getElementById("lblAddCryptoPreview").textContent = "Montant investi : — • Jetons : —";
 
                 selectCryptoChip("BTC", "BITCOIN");
                 toggleAddEnvelopeFields();
@@ -1416,10 +1844,10 @@
                 const inpName = document.getElementById("addEurName");
                 if (isPea) {
                     lblName.textContent = "Nom de l'action / du support *";
-                    inpName.placeholder = "Ex: AIR LIQUIDE ou ISHARES MSCI WORLD PEA";
+                    inpName.placeholder = "Ex: ALSTOM ou AMUNDI CORE NASDAQ-100";
                 } else {
                     lblName.textContent = "Nom du support *";
-                    inpName.placeholder = "Ex: AMUNDI MSCI EMERGING MARKETS";
+                    inpName.placeholder = "Ex: AMUNDI IS MSCI EMERG MKTS SWP ETF EURACC";
                 }
             }
 
@@ -1440,13 +1868,11 @@
             }
 
             function updateAddPreviews(changedSource) {
-                // 1) Prévisualisation PEA : Quantité × Prix unitaire = Montant total investi
                 const peaQty = parseFloat(document.getElementById("addPeaQty").value) || 0;
                 const peaUnit = parseFloat(document.getElementById("addPeaUnitPrice").value) || 0;
                 const peaTotal = peaQty * peaUnit;
                 document.getElementById("lblAddPeaTotalPreview").textContent = formatMoney(peaTotal, "€");
 
-                // 2) Prévisualisation Assurance-vie / PER : Montant investi / VL = Parts
                 const eurInv = parseFloat(document.getElementById("addEurInvested").value) || 0;
                 const eurUnit = parseFloat(document.getElementById("addEurUnitPrice").value) || 0;
                 const eurQtyInput = document.getElementById("addEurQty");
@@ -1461,7 +1887,6 @@
                         : "Parts : —";
                 }
 
-                // 3) Prévisualisation Crypto croisée (Quantité <-> Montant investi)
                 const cQtyInput = document.getElementById("addCryptoQty");
                 const cInvInput = document.getElementById("addCryptoInvested");
                 const cUnit = parseFloat(document.getElementById("addCryptoUnitPrice").value) || 0;
@@ -1475,18 +1900,18 @@
                     cQty = cInv / cUnit;
                     cQtyInput.value = Number(cQty.toFixed(6));
                 } else if (changedSource === "crypto-unit" && cUnit > 0) {
-                    if (cQty > 0) {
-                        cInv = cQty * cUnit;
-                        cInvInput.value = Number(cInv.toFixed(2));
-                    } else if (cInv > 0) {
+                    if (cInv > 0) {
                         cQty = cInv / cUnit;
                         cQtyInput.value = Number(cQty.toFixed(6));
+                    } else if (cQty > 0) {
+                        cInv = cQty * cUnit;
+                        cInvInput.value = Number(cInv.toFixed(2));
                     }
                 }
 
                 const invLabel = cInv > 0 ? formatMoney(cInv, "USDC") : "—";
                 const qtyLabel = cQty > 0 ? formatQtyNumber(cQty) : "—";
-                document.getElementById("lblAddCryptoPreview").textContent = `Montant investi : ${invLabel} • Quantité : ${qtyLabel}`;
+                document.getElementById("lblAddCryptoPreview").textContent = `Montant investi : ${invLabel} • Jetons : ${qtyLabel}`;
             }
 
             async function lookupIsinName() {
@@ -1533,33 +1958,12 @@
                         }
                     }
                 } catch (err) {
-                    // Repli manuel propre
+                    // Repli manuel
                 }
 
                 statusEl.className = "text-[11px] text-amber-700 mt-1";
                 statusEl.textContent = "ISIN non trouvé en ligne : saisissez le nom du support ci-dessous.";
                 nameInput.focus();
-            }
-
-            async function fetchCryptoPriceUSD(ticker) {
-                const clean = (ticker || "").trim().toUpperCase();
-                const cgId = COINGECKO_IDS[clean] || clean.toLowerCase();
-                if (!cgId) return null;
-                try {
-                    const controller = new AbortController();
-                    const timer = setTimeout(() => controller.abort(), 5000);
-                    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(cgId)}&vs_currencies=usd`;
-                    const resp = await fetch(url, { signal: controller.signal });
-                    clearTimeout(timer);
-                    if (!resp.ok) return null;
-                    const data = await resp.json();
-                    if (data && data[cgId] && typeof data[cgId].usd === "number") {
-                        return data[cgId].usd;
-                    }
-                } catch (err) {
-                    return null;
-                }
-                return null;
             }
 
             async function handleFetchAddCrypto() {
@@ -1609,7 +2013,7 @@
                     }
 
                     if (!name || invested <= 0) {
-                        showToast("Saisissez la crypto, la quantité et/ou le montant USDC");
+                        showToast("Saisissez la crypto et le montant investi (USDC)");
                         return;
                     }
                 } else if (isPea) {
@@ -1680,7 +2084,7 @@
                 showToast("Entrée ajoutée avec succès");
             }
 
-            // 8. GESTION DE LA MODALE D'ÉDITION / CLÔTURE / HISTORIQUE
+            // 10. GESTION DE LA MODALE D'ÉDITION / CLÔTURE / HISTORIQUE
             function openEditModal(posId) {
                 const pos = appState.positions.find(p => p.id === posId);
                 if (!pos) return;
@@ -1877,7 +2281,6 @@
                     });
                 }
 
-                // Propagation aux entrées sœurs si demandée
                 let propagated = 0;
                 const canPropagate = pos.status === "open" && document.getElementById("chkPropagate").checked && curPrice > 0;
                 if (canPropagate) {
@@ -1914,7 +2317,6 @@
                 showToast(propagated > 0 ? `Modifié + propagé à ${propagated} autre(s) ligne(s)` : "Modifications enregistrées");
             }
 
-            // Clôture ("Passer en Sortie")
             function toggleClosePanel() {
                 const panel = document.getElementById("closePanel");
                 const isHidden = panel.classList.contains("hidden");
@@ -1926,6 +2328,17 @@
                     document.getElementById("closeDate").value = getTodayISO();
                     document.getElementById("lblCloseUnit").textContent = `VL / Cours sortie (${currency})`;
                     document.getElementById("lblCloseTotal").textContent = `Montant récupéré (${currency}) *`;
+
+                    const qtyGroup = document.getElementById("closeQtyGroup");
+                    if (m.qty > 0) {
+                        qtyGroup.classList.remove("hidden");
+                        document.getElementById("lblCloseQty").textContent = pos.envelope === "PEA" ? "Actions vendues" : "Quantité vendue";
+                        document.getElementById("closeQty").value = Number(m.qty.toFixed(6));
+                    } else {
+                        qtyGroup.classList.add("hidden");
+                        document.getElementById("closeQty").value = "";
+                    }
+
                     document.getElementById("closeUnitPrice").value = m.effectiveCurrentUnit > 0 ? m.effectiveCurrentUnit : "";
                     document.getElementById("closeTotalAmount").value = Number(m.currentValue.toFixed(2));
                     updateClosePreview();
@@ -1939,10 +2352,18 @@
                 const pos = appState.positions.find(p => p.id === appState.editingId);
                 if (!pos) return;
                 const currency = getCurrency(pos.envelope);
-                const invested = parseFloat(document.getElementById("editInvested").value) || pos.investedAmount;
+                const fullInvested = parseFloat(document.getElementById("editInvested").value) || pos.investedAmount;
+                const fullQty = parseFloat(document.getElementById("editQty").value) || pos.qty || 0;
+                const sellQty = parseFloat(document.getElementById("closeQty").value) || 0;
                 const totalOut = parseFloat(document.getElementById("closeTotalAmount").value) || 0;
-                const pnl = totalOut - invested;
-                const pct = invested > 0 ? (pnl / invested) * 100 : 0;
+
+                let proportionalInvested = fullInvested;
+                if (fullQty > 0 && sellQty > 0 && sellQty < fullQty - 1e-6) {
+                    proportionalInvested = fullInvested * (sellQty / fullQty);
+                }
+
+                const pnl = totalOut - proportionalInvested;
+                const pct = proportionalInvested > 0 ? (pnl / proportionalInvested) * 100 : 0;
                 const el = document.getElementById("closePreviewText");
                 el.textContent = `Plus-value figée : ${formatMoney(pnl, currency, true)} (${formatPercent(pct)})`;
                 el.className = `text-xs font-bold text-center py-2 rounded-xl bg-white border border-amber-200 ${pnl >= 0 ? "text-[#0D8A58]" : "text-[#D63638]"}`;
@@ -1965,15 +2386,69 @@
                 const invested = parseFloat(document.getElementById("editInvested").value) || pos.investedAmount;
                 const buyPrice = parseFloat(document.getElementById("editBuyPrice").value) || pos.buyPrice || 0;
                 const inputQty = parseFloat(document.getElementById("editQty").value) || 0;
-                const qty = inputQty > 0 ? inputQty : (buyPrice > 0 ? invested / buyPrice : pos.qty);
+                const fullQty = inputQty > 0 ? inputQty : (buyPrice > 0 ? invested / buyPrice : pos.qty);
+                const sellQty = parseFloat(document.getElementById("closeQty").value) || 0;
+
+                if (fullQty > 0 && sellQty > 0 && sellQty < fullQty - 1e-6) {
+                    const ratio = sellQty / fullQty;
+                    const soldInvested = invested * ratio;
+                    const remainingQty = fullQty - sellQty;
+                    const remainingInvested = invested - soldInvested;
+
+                    pos.qty = remainingQty;
+                    pos.investedAmount = remainingInvested;
+                    if (exitUnit > 0) pos.currentPrice = exitUnit;
+                    pos.manualCurrentValue = null;
+
+                    const closedPart = normalizePosition({
+                        id: "pos-" + Date.now() + "-part",
+                        status: "closed",
+                        envelope: pos.envelope,
+                        name: pos.name,
+                        code: pos.code,
+                        entryDate: pos.entryDate,
+                        exitDate,
+                        investedAmount: soldInvested,
+                        qty: sellQty,
+                        buyPrice,
+                        currentPrice: exitUnit > 0 ? exitUnit : totalOut / sellQty,
+                        closedAmount: totalOut,
+                        note: pos.note,
+                        history: []
+                    });
+
+                    const pnlPart = totalOut - soldInvested;
+                    const pctPart = soldInvested > 0 ? (pnlPart / soldInvested) * 100 : 0;
+
+                    recordHistory(pos, {
+                        type: "UPDATE",
+                        source: "Sortie partielle",
+                        label: `Sortie partielle de ${formatQtyNumber(sellQty)}`,
+                        detail: `Reste ${formatQtyNumber(remainingQty)} (${formatMoney(remainingInvested, currency)})`
+                    });
+
+                    recordHistory(closedPart, {
+                        type: "CLOSE",
+                        source: "Sortie partielle",
+                        label: "Sortie partielle figée",
+                        detail: `Sortie ${formatMoney(totalOut, currency)} (${formatMoney(pnlPart, currency, true)} / ${formatPercent(pctPart)})`
+                    });
+
+                    appState.positions.unshift(closedPart);
+                    saveData();
+                    closeModal("modalEdit");
+                    renderAll();
+                    showToast("Sortie partielle enregistrée");
+                    return;
+                }
 
                 pos.investedAmount = invested;
                 pos.buyPrice = buyPrice;
-                pos.qty = qty;
+                pos.qty = fullQty;
                 pos.status = "closed";
                 pos.exitDate = exitDate;
                 pos.closedAmount = totalOut;
-                pos.currentPrice = exitUnit > 0 ? exitUnit : (qty > 0 ? totalOut / qty : 0);
+                pos.currentPrice = exitUnit > 0 ? exitUnit : (fullQty > 0 ? totalOut / fullQty : 0);
                 pos.manualCurrentValue = null;
 
                 const pnl = totalOut - invested;
@@ -2009,7 +2484,7 @@
                 showToast("Position réouverte dans Entrées");
             }
 
-            // 9. MODALE DE MISE À JOUR GROUPÉE ("COURS / VL")
+            // 11. MODALE DE MISE À JOUR GROUPÉE ("COURS / VL")
             function openBulkModal() {
                 const openPositions = appState.positions.filter(p => p.status === "open");
                 const container = document.getElementById("bulkListContainer");
@@ -2144,65 +2619,7 @@
                 showToast(updatedLines > 0 ? `${updatedLines} ligne(s) recalculée(s)` : "Valeurs à jour");
             }
 
-            // 10. ACTUALISATION AUTO CRYPTO (COINGECKO)
-            async function handleBatchCryptoRefresh() {
-                const openCryptos = appState.positions.filter(p => p.status === "open" && p.envelope === "Crypto");
-                if (openCryptos.length === 0) {
-                    showToast("Aucune position Crypto ouverte à actualiser");
-                    return;
-                }
-
-                const icon = document.getElementById("iconRefreshCrypto");
-                icon.classList.add("animate-spin-fast");
-                showToast("Actualisation des cours Crypto...");
-
-                const tickers = [...new Set(openCryptos.map(p => (p.code || p.name).trim().toUpperCase()))];
-                const priceCache = new Map();
-
-                for (const tk of tickers) {
-                    const price = await fetchCryptoPriceUSD(tk);
-                    if (price && price > 0) {
-                        priceCache.set(tk, price);
-                    }
-                }
-
-                let updatedCount = 0;
-                openCryptos.forEach(pos => {
-                    const tk = (pos.code || pos.name).trim().toUpperCase();
-                    if (priceCache.has(tk)) {
-                        const nextP = priceCache.get(tk);
-                        const prevP = Number(pos.currentPrice) || 0;
-                        pos.currentPrice = nextP;
-                        if (!pos.buyPrice || pos.buyPrice <= 0) {
-                            pos.buyPrice = nextP;
-                            pos.qty = pos.investedAmount > 0 ? pos.investedAmount / nextP : 0;
-                        }
-                        pos.manualCurrentValue = null;
-
-                        if (Math.abs(nextP - prevP) > 1e-7) {
-                            recordHistory(pos, {
-                                type: "PRICE",
-                                source: "Auto",
-                                label: "Cours Crypto actualisé",
-                                detail: prevP > 0
-                                    ? `${formatUnitPrice(prevP, "USDC")} → ${formatUnitPrice(nextP, "USDC")}`
-                                    : `Nouveau cours : ${formatUnitPrice(nextP, "USDC")}`
-                            });
-                            updatedCount++;
-                        }
-                    }
-                });
-
-                icon.classList.remove("animate-spin-fast");
-                saveData();
-                renderAll();
-
-                const nowTime = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-                document.getElementById("lblSyncStatus").textContent = `Cours Crypto vérifiés à ${nowTime}`;
-                showToast(updatedCount > 0 ? `${updatedCount} position(s) Crypto actualisée(s)` : "Cours Crypto vérifiés");
-            }
-
-            // 11. JOURNAL GLOBAL & EXPORT / IMPORT JSON / CSV
+            // 12. JOURNAL GLOBAL & EXPORT / IMPORT JSON / CSV
             function renderGlobalJournal() {
                 const filter = appState.activeJournalFilter;
                 document.querySelectorAll(".journal-pill").forEach(btn => {
@@ -2277,8 +2694,7 @@
                     positions: appState.positions,
                     journal: appState.journal
                 };
-                const dateTag = getTodayISO();
-                triggerDownload(JSON.stringify(payload, null, 2), `cvatp_portefeuilles_${dateTag}.json`, "application/json");
+                triggerDownload(JSON.stringify(payload, null, 2), `cvatp_portefeuilles_${getTodayISO()}.json`, "application/json");
                 showToast("Fichier JSON téléchargé");
             }
 
@@ -2331,7 +2747,24 @@
                 }
             }
 
-            // 12. DÉLÉGATION D'ÉVÉNEMENTS CENTRALISÉE SUR DOCUMENT
+            function copyTextFallback(text) {
+                const ta = document.createElement("textarea");
+                ta.value = text;
+                ta.style.position = "fixed";
+                ta.style.opacity = "0";
+                document.body.appendChild(ta);
+                ta.select();
+                let ok = false;
+                try {
+                    ok = document.execCommand("copy");
+                } catch (e) {
+                    ok = false;
+                }
+                document.body.removeChild(ta);
+                return ok;
+            }
+
+            // 13. DÉLÉGATION D'ÉVÉNEMENTS CENTRALISÉE SUR DOCUMENT
             function closeModal(modalId) {
                 const el = document.getElementById(modalId);
                 if (el) el.classList.add("hidden");
@@ -2361,8 +2794,8 @@
                         applyBulkUpdates();
                         break;
 
-                    case "refresh-crypto":
-                        handleBatchCryptoRefresh();
+                    case "refresh-all-market":
+                        handleFullMarketRefresh(false);
                         break;
 
                     case "open-menu-modal":
@@ -2370,8 +2803,24 @@
                         document.getElementById("pasteJsonBox").classList.add("hidden");
                         document.getElementById("confirmResetAllBox").classList.add("hidden");
                         document.getElementById("btnAskResetAll").classList.remove("hidden");
+                        updateCsvDiagUI();
                         document.getElementById("modalMenu").classList.remove("hidden");
                         break;
+
+                    case "test-github-csv":
+                        handleFullMarketRefresh(true);
+                        break;
+
+                    case "copy-csv-template": {
+                        const copied = copyTextFallback(CSV_TEMPLATE_SAMPLE);
+                        if (copied) {
+                            showToast("Modèle cours.csv copié dans le presse-papiers !");
+                        } else {
+                            triggerDownload(CSV_TEMPLATE_SAMPLE, "cours.csv", "text/csv;charset=utf-8;");
+                            showToast("Fichier modèle cours.csv téléchargé");
+                        }
+                        break;
+                    }
 
                     case "open-journal-modal":
                         closeModal("modalMenu");
@@ -2571,7 +3020,6 @@
             document.getElementById("formAdd").addEventListener("submit", handleAddSubmit);
             document.getElementById("formEdit").addEventListener("submit", handleEditSubmit);
 
-            // Synchronisation dynamique dans la modale d'édition (Quantité × Prix achat = Investi)
             document.getElementById("editQty").addEventListener("input", function () {
                 const qty = parseFloat(this.value) || 0;
                 const buyPrice = parseFloat(document.getElementById("editBuyPrice").value) || 0;
@@ -2586,10 +3034,11 @@
             });
 
             document.getElementById("editBuyPrice").addEventListener("input", function () {
-                const qty = parseFloat(document.getElementById("editQty").value) || 0;
+                const qty = parseFloat(this.value) || 0;
                 const buyPrice = parseFloat(this.value) || 0;
-                if (qty > 0 && buyPrice > 0) {
-                    document.getElementById("editInvested").value = Number((qty * buyPrice).toFixed(2));
+                const realQty = parseFloat(document.getElementById("editQty").value) || 0;
+                if (realQty > 0 && buyPrice > 0) {
+                    document.getElementById("editInvested").value = Number((realQty * buyPrice).toFixed(2));
                 }
                 refreshEditPerfSummary();
             });
@@ -2627,13 +3076,24 @@
                 refreshEditPerfSummary();
             });
 
+            document.getElementById("closeQty").addEventListener("input", function () {
+                const sellQty = parseFloat(this.value) || 0;
+                const unitOut = parseFloat(document.getElementById("closeUnitPrice").value) || 0;
+                if (sellQty > 0 && unitOut > 0) {
+                    document.getElementById("closeTotalAmount").value = Number((sellQty * unitOut).toFixed(2));
+                }
+                updateClosePreview();
+            });
+
             document.getElementById("closeUnitPrice").addEventListener("input", function () {
                 const pos = appState.positions.find(p => p.id === appState.editingId);
                 if (!pos) return;
+                const sellQty = parseFloat(this.value) || 0;
+                const realSellQty = parseFloat(document.getElementById("closeQty").value) || 0;
                 const qty = parseFloat(document.getElementById("editQty").value) || 0;
                 const invested = parseFloat(document.getElementById("editInvested").value) || pos.investedAmount;
                 const buyPrice = parseFloat(document.getElementById("editBuyPrice").value) || pos.buyPrice || 0;
-                const effQty = qty > 0 ? qty : (buyPrice > 0 ? invested / buyPrice : 0);
+                const effQty = realSellQty > 0 ? realSellQty : (qty > 0 ? qty : (buyPrice > 0 ? invested / buyPrice : 0));
                 const unitOut = parseFloat(this.value) || 0;
                 if (effQty > 0 && unitOut > 0) {
                     document.getElementById("closeTotalAmount").value = Number((effQty * unitOut).toFixed(2));
@@ -2653,9 +3113,10 @@
                 this.value = "";
             });
 
-            // 13. INITIALISATION AU DÉMARRAGE
+            // 14. INITIALISATION AU DÉMARRAGE
             loadData();
             renderAll();
+            updateCsvDiagUI();
         })();
     </script>
 </body>
