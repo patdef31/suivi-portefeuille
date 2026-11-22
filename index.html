@@ -18,12 +18,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Manifeste PWA dynamique -->
+    <!-- Manifeste PWA embarqué -->
     <script>
         (function () {
             try {
                 const manifest = {
-                    name: "Suivi des portefeuilles",
+                    name: "CVATP — Suivi des portefeuilles",
                     short_name: "Portefeuilles",
                     description: "Suivi personnel des entrées et sorties PEA, Linxea, PER, Crypto",
                     start_url: ".",
@@ -77,7 +77,7 @@
     <!-- ==================== EN-TÊTE FIXE ==================== -->
     <header class="bg-white border-b border-[#E2E8F0] sticky top-0 z-30">
         <div class="max-w-lg mx-auto px-3.5 h-14 flex items-center justify-between gap-2">
-            <!-- Logo -->
+            <!-- Logo CVATP -->
             <div class="flex items-center gap-2 shrink-0">
                 <div class="w-8 h-8 rounded-lg bg-[#007A63] flex items-center justify-center relative shadow-xs">
                     <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -105,7 +105,7 @@
                     <svg id="iconRefreshCrypto" class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                     </svg>
-                    <span class="pointer-events-none">Actualiser</span>
+                    <span class="pointer-events-none">Auto</span>
                 </button>
 
                 <button type="button" data-action="open-menu-modal" aria-label="Menu"
@@ -239,8 +239,9 @@
                     class="bg-white border border-[#E2E8F0] rounded-xl px-2.5 py-2 text-xs font-semibold text-gray-700 focus:outline-none focus:border-[#007A63]">
                     <option value="date_desc">Date récente</option>
                     <option value="date_asc">Date ancienne</option>
-                    <option value="perf_desc">Performance %</option>
-                    <option value="val_desc">Valorisation</option>
+                    <option value="perf_desc">Plus-value %</option>
+                    <option value="pnl_desc">Plus-value montant</option>
+                    <option value="inv_desc">Montant investi</option>
                 </select>
             </div>
         </div>
@@ -325,12 +326,12 @@
                     </select>
                 </div>
 
-                <!-- FORMULAIRE ENVELOPPES EUR (ISIN EN PREMIER) -->
-                <div id="addFieldsEur" class="space-y-3">
+                <!-- BLOC COMMUN ISIN + NOM POUR ENVELOPPES EUR (ASSURANCE-VIE / PER / PEA) -->
+                <div id="addCommonEurHeader" class="space-y-3">
                     <div>
                         <label for="addEurIsin" class="block text-xs font-semibold text-gray-700 mb-1">Code ISIN <span class="text-gray-400 font-normal">(optionnel)</span></label>
                         <div class="flex gap-2">
-                            <input type="text" id="addEurIsin" maxlength="12" placeholder="Ex: LU1681045370"
+                            <input type="text" id="addEurIsin" maxlength="12" placeholder="Ex: FR0000120073 ou LU1681045370"
                                 class="flex-1 bg-gray-50 border border-[#E2E8F0] rounded-xl px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:border-[#007A63] focus:bg-white">
                             <button type="button" data-action="lookup-isin"
                                 class="shrink-0 px-3 py-2 bg-teal-50 text-[#007A63] border border-teal-200 rounded-xl text-xs font-bold hover:bg-teal-100 active:scale-95 transition cursor-pointer">
@@ -341,11 +342,35 @@
                     </div>
 
                     <div>
-                        <label for="addEurName" class="block text-xs font-semibold text-gray-700 mb-1">Nom du support *</label>
+                        <label id="lblAddEurName" for="addEurName" class="block text-xs font-semibold text-gray-700 mb-1">Nom du support *</label>
                         <input type="text" id="addEurName" placeholder="Ex: AMUNDI MSCI EMERGING MARKETS"
                             class="w-full bg-gray-50 border border-[#E2E8F0] rounded-xl px-3 py-2 text-sm uppercase focus:outline-none focus:border-[#007A63] focus:bg-white">
                     </div>
+                </div>
 
+                <!-- FORMULAIRE SPÉCIFIQUE PEA : QUANTITÉ D'ACTIONS × PRIX UNITAIRE D'ACHAT -->
+                <div id="addFieldsPea" class="hidden space-y-3 bg-teal-50/40 p-3.5 rounded-2xl border border-teal-200/80">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="addPeaQty" class="block text-xs font-semibold text-gray-700 mb-1">Quantité d'actions *</label>
+                            <input type="number" step="any" min="0.0001" id="addPeaQty" placeholder="Ex: 12"
+                                class="w-full bg-white border border-teal-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 focus:outline-none focus:border-[#007A63]">
+                        </div>
+                        <div>
+                            <label for="addPeaUnitPrice" class="block text-xs font-semibold text-gray-700 mb-1">Prix unitaire d'achat (€) *</label>
+                            <input type="number" step="any" min="0.0001" id="addPeaUnitPrice" placeholder="Ex: 168.50"
+                                class="w-full bg-white border border-teal-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 focus:outline-none focus:border-[#007A63]">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between bg-white px-3 py-2.5 rounded-xl border border-teal-200/80">
+                        <span class="text-xs font-medium text-gray-600">Montant total investi calculé :</span>
+                        <span id="lblAddPeaTotalPreview" class="text-sm font-extrabold text-[#007A63]">0,00 €</span>
+                    </div>
+                </div>
+
+                <!-- FORMULAIRE ENVELOPPES ASSURANCE-VIE / PER : MONTANT INVESTI + VL -->
+                <div id="addFieldsNav" class="space-y-3">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label for="addEurInvested" class="block text-xs font-semibold text-gray-700 mb-1">Montant investi (€) *</label>
@@ -353,7 +378,7 @@
                                 class="w-full bg-gray-50 border border-[#E2E8F0] rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#007A63] focus:bg-white">
                         </div>
                         <div>
-                            <label for="addEurUnitPrice" class="block text-xs font-semibold text-gray-700 mb-1">VL / Cours achat (€)</label>
+                            <label for="addEurUnitPrice" class="block text-xs font-semibold text-gray-700 mb-1">VL d'achat (€) <span class="text-gray-400 font-normal">(opt.)</span></label>
                             <input type="number" step="any" min="0" id="addEurUnitPrice" placeholder="Ex: 7.01"
                                 class="w-full bg-gray-50 border border-[#E2E8F0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63] focus:bg-white">
                         </div>
@@ -371,21 +396,27 @@
                     </div>
                 </div>
 
-                <!-- FORMULAIRE CRYPTO (USDC) -->
+                <!-- FORMULAIRE CRYPTO (USDC) : QUANTITÉ + COURS OU MONTANT -->
                 <div id="addFieldsCrypto" class="hidden space-y-3 bg-gray-50 p-3.5 rounded-2xl border border-[#E2E8F0]">
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1.5">Cryptomonnaie rapide</label>
-                        <div class="grid grid-cols-5 gap-1.5">
+                        <div class="grid grid-cols-4 gap-1.5">
                             <button type="button" data-action="pick-crypto" data-ticker="BTC" data-name="BITCOIN"
-                                class="crypto-chip py-2 rounded-xl text-xs font-bold border bg-[#007A63] text-white border-[#007A63] cursor-pointer">BTC</button>
+                                class="crypto-chip py-1.5 rounded-xl text-xs font-bold border bg-[#007A63] text-white border-[#007A63] cursor-pointer">BTC</button>
                             <button type="button" data-action="pick-crypto" data-ticker="ETH" data-name="ETHEREUM"
-                                class="crypto-chip py-2 rounded-xl text-xs font-bold border bg-white text-gray-700 border-gray-200 cursor-pointer">ETH</button>
+                                class="crypto-chip py-1.5 rounded-xl text-xs font-bold border bg-white text-gray-700 border-gray-200 cursor-pointer">ETH</button>
                             <button type="button" data-action="pick-crypto" data-ticker="SOL" data-name="SOLANA"
-                                class="crypto-chip py-2 rounded-xl text-xs font-bold border bg-white text-gray-700 border-gray-200 cursor-pointer">SOL</button>
+                                class="crypto-chip py-1.5 rounded-xl text-xs font-bold border bg-white text-gray-700 border-gray-200 cursor-pointer">SOL</button>
                             <button type="button" data-action="pick-crypto" data-ticker="XRP" data-name="RIPPLE"
-                                class="crypto-chip py-2 rounded-xl text-xs font-bold border bg-white text-gray-700 border-gray-200 cursor-pointer">XRP</button>
+                                class="crypto-chip py-1.5 rounded-xl text-xs font-bold border bg-white text-gray-700 border-gray-200 cursor-pointer">XRP</button>
+                            <button type="button" data-action="pick-crypto" data-ticker="ADA" data-name="CARDANO"
+                                class="crypto-chip py-1.5 rounded-xl text-xs font-bold border bg-white text-gray-700 border-gray-200 cursor-pointer">ADA</button>
+                            <button type="button" data-action="pick-crypto" data-ticker="AVAX" data-name="AVALANCHE"
+                                class="crypto-chip py-1.5 rounded-xl text-xs font-bold border bg-white text-gray-700 border-gray-200 cursor-pointer">AVAX</button>
+                            <button type="button" data-action="pick-crypto" data-ticker="LINK" data-name="CHAINLINK"
+                                class="crypto-chip py-1.5 rounded-xl text-xs font-bold border bg-white text-gray-700 border-gray-200 cursor-pointer">LINK</button>
                             <button type="button" data-action="pick-crypto" data-ticker="" data-name=""
-                                class="crypto-chip py-2 rounded-xl text-xs font-bold border bg-white text-gray-700 border-gray-200 cursor-pointer">Autre</button>
+                                class="crypto-chip py-1.5 rounded-xl text-xs font-bold border bg-white text-gray-700 border-gray-200 cursor-pointer">Autre</button>
                         </div>
                     </div>
 
@@ -402,14 +433,21 @@
                         </div>
                     </div>
 
-                    <div>
-                        <label for="addCryptoInvested" class="block text-xs font-semibold text-gray-700 mb-1">Montant investi (USDC) *</label>
-                        <input type="number" step="any" min="0.0001" id="addCryptoInvested" placeholder="Ex: 500"
-                            class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#007A63]">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="addCryptoQty" class="block text-xs font-semibold text-gray-700 mb-1">Quantité de jetons *</label>
+                            <input type="number" step="any" min="0" id="addCryptoQty" placeholder="Ex: 0.05"
+                                class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#007A63]">
+                        </div>
+                        <div>
+                            <label for="addCryptoInvested" class="block text-xs font-semibold text-gray-700 mb-1">Ou montant (USDC)</label>
+                            <input type="number" step="any" min="0" id="addCryptoInvested" placeholder="Ex: 500"
+                                class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#007A63]">
+                        </div>
                     </div>
 
                     <div>
-                        <label for="addCryptoUnitPrice" class="block text-xs font-semibold text-gray-700 mb-1">Cours d'achat (USDC)</label>
+                        <label for="addCryptoUnitPrice" class="block text-xs font-semibold text-gray-700 mb-1">Prix unitaire d'achat (USDC)</label>
                         <div class="flex gap-2">
                             <input type="number" step="any" min="0" id="addCryptoUnitPrice" placeholder="Ex: 91000"
                                 class="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63]">
@@ -419,7 +457,7 @@
                             </button>
                         </div>
                         <p id="lblAddCryptoPreview" class="text-[11px] font-semibold text-[#007A63] mt-1">
-                            Quantité : —
+                            Montant investi : — • Quantité : —
                         </p>
                     </div>
                 </div>
@@ -493,16 +531,22 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
+                <!-- Quantité (Actions / Parts / Jetons) + Prix unitaire d'achat + Montant investi -->
+                <div class="grid grid-cols-3 gap-2">
                     <div>
-                        <label id="lblEditInvested" for="editInvested" class="block text-xs font-semibold text-gray-700 mb-1">Montant investi *</label>
-                        <input type="number" step="any" min="0.0001" id="editInvested" required
-                            class="w-full bg-gray-50 border border-[#E2E8F0] rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#007A63]">
+                        <label id="lblEditQty" for="editQty" class="block text-[11px] font-semibold text-gray-700 mb-1">Quantité</label>
+                        <input type="number" step="any" min="0" id="editQty"
+                            class="w-full bg-gray-50 border border-[#E2E8F0] rounded-xl px-2.5 py-2 text-sm font-bold focus:outline-none focus:border-[#007A63]">
                     </div>
                     <div>
-                        <label id="lblEditBuyPrice" for="editBuyPrice" class="block text-xs font-semibold text-gray-700 mb-1">VL / Cours achat</label>
+                        <label id="lblEditBuyPrice" for="editBuyPrice" class="block text-[11px] font-semibold text-gray-700 mb-1">Prix / VL achat</label>
                         <input type="number" step="any" min="0" id="editBuyPrice"
-                            class="w-full bg-gray-50 border border-[#E2E8F0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63]">
+                            class="w-full bg-gray-50 border border-[#E2E8F0] rounded-xl px-2.5 py-2 text-sm focus:outline-none focus:border-[#007A63]">
+                    </div>
+                    <div>
+                        <label id="lblEditInvested" for="editInvested" class="block text-[11px] font-semibold text-gray-700 mb-1">Investi *</label>
+                        <input type="number" step="any" min="0.0001" id="editInvested" required
+                            class="w-full bg-gray-50 border border-[#E2E8F0] rounded-xl px-2.5 py-2 text-sm font-bold focus:outline-none focus:border-[#007A63]">
                     </div>
                 </div>
 
@@ -561,7 +605,7 @@
 
                     <button type="button" id="btnShowClosePanel" data-action="toggle-close-panel"
                         class="w-full py-2.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 font-bold text-xs hover:bg-amber-100 transition cursor-pointer">
-                        Clôturer la position (Sortie)
+                        Clôturer / Sortir la position
                     </button>
 
                     <button type="button" id="btnReopenPosition" data-action="reopen-position"
@@ -669,7 +713,7 @@
             </div>
 
             <p class="text-xs text-gray-500 mt-2.5 shrink-0">
-                Vos entrées ouvertes sont regroupées par support unique. Saisissez la nouvelle VL ou le nouveau cours : toutes les lignes associées se recalculent automatiquement.
+                Vos entrées ouvertes sont regroupées par support unique. Saisissez la nouvelle VL ou le nouveau cours unitaire : toutes les lignes associées se recalculent en cascade.
             </p>
 
             <div id="bulkListContainer" class="mt-3 space-y-2.5 overflow-y-auto flex-1 pr-0.5">
@@ -679,7 +723,7 @@
             <div class="pt-3 mt-3 border-t border-gray-100 shrink-0">
                 <button type="button" data-action="apply-bulk"
                     class="w-full py-3 rounded-xl bg-[#007A63] hover:bg-[#006250] text-white font-bold text-sm shadow-sm active:scale-[0.99] transition cursor-pointer">
-                    Appliquer les mises à jour
+                    Appliquer aux positions
                 </button>
             </div>
         </div>
@@ -699,7 +743,7 @@
             </div>
 
             <p class="text-xs text-gray-500 leading-relaxed">
-                Vos données sont enregistrées localement sur votre téléphone. Exportez régulièrement un fichier JSON pour sécuriser votre suivi.
+                Vos données sont enregistrées localement sur votre téléphone. Exportez régulièrement une sauvegarde JSON pour sécuriser votre suivi.
             </p>
 
             <div class="space-y-2.5">
@@ -716,22 +760,14 @@
 
                 <button type="button" data-action="export-json"
                     class="w-full flex items-center justify-between p-3.5 rounded-2xl bg-teal-50/70 border border-teal-200 text-[#007A63] font-bold text-sm hover:bg-teal-100/70 transition cursor-pointer">
-                    <span class="pointer-events-none">Exporter en JSON</span>
+                    <span class="pointer-events-none">Exporter sauvegarde (.JSON)</span>
                     <svg class="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                     </svg>
                 </button>
 
-                <button type="button" data-action="export-csv"
-                    class="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-[#E2E8F0] text-gray-800 font-semibold text-sm hover:bg-gray-100 transition cursor-pointer">
-                    <span class="pointer-events-none">Exporter en CSV</span>
-                    <svg class="w-5 h-5 text-gray-500 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                </button>
-
                 <label class="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-[#E2E8F0] text-gray-800 font-semibold text-sm hover:bg-gray-100 transition cursor-pointer">
-                    <span>Importer un fichier JSON</span>
+                    <span>Importer fichier (.JSON)</span>
                     <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                     </svg>
@@ -757,13 +793,21 @@
                         Importer ce texte JSON
                     </button>
                 </div>
+
+                <button type="button" data-action="export-csv"
+                    class="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-[#E2E8F0] text-gray-800 font-semibold text-sm hover:bg-gray-100 transition cursor-pointer">
+                    <span class="pointer-events-none">Exporter tableau (.CSV)</span>
+                    <svg class="w-5 h-5 text-gray-500 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </button>
             </div>
 
             <!-- Réinitialisation complète -->
             <div class="pt-3 border-t border-gray-100">
                 <button type="button" id="btnAskResetAll" data-action="ask-reset-all"
                     class="w-full py-2.5 rounded-xl bg-red-50 text-red-600 border border-red-200 font-bold text-xs hover:bg-red-100 transition cursor-pointer">
-                    Réinitialiser toutes les données
+                    Réinitialiser les données
                 </button>
 
                 <div id="confirmResetAllBox" class="hidden p-3 rounded-2xl bg-red-50 border border-red-200 space-y-2">
@@ -840,17 +884,19 @@
             const STORAGE_JOURNAL_KEY = "cvatp_journal_v1";
             const LEGACY_KEYS = ["cvatp_portfolio_v2", "cvatp_portfolio_v1"];
 
-            // Dictionnaire local d'ISIN fréquents (fonctionne hors-ligne et sans blocage CORS)
+            // Dictionnaire local d'ISIN (Assurance-vie, PER, ETF et actions PEA courants)
             const KNOWN_ISINS = {
                 "LU1681045370": "AMUNDI MSCI EMERGING MARKETS UCITS ETF",
                 "LU1829221024": "AMUNDI NASDAQ-100 UCITS ETF",
                 "LU1834983477": "MULTI UNITS LUXEMBOURG - AMUNDI STOXX EUROPE 600",
                 "LU1900066207": "AMUNDI MSCI BRAZIL UCITS ETF",
                 "LU1681043599": "AMUNDI MSCI WORLD UCITS ETF (CW8)",
-                "FR0011869353": "AMUNDI PEA MSCI EMERGING MARKETS UCITS ETF",
-                "FR0011550185": "BNP PARIBAS EASY S&P 500 UCITS ETF",
-                "FR0013412285": "AMUNDI PEA S&P 500 UCITS ETF",
+                "IE0002XZSHO1": "ISHARES MSCI WORLD SWAP PEA UCITS ETF (WPEA)",
+                "FR0011550185": "BNP PARIBAS EASY S&P 500 UCITS ETF (ESE)",
+                "FR0013412269": "AMUNDI PEA NASDAQ-100 UCITS ETF (PANX)",
                 "FR0013412020": "AMUNDI PEA NASDAQ-100 UCITS ETF",
+                "FR0013412285": "AMUNDI PEA S&P 500 UCITS ETF",
+                "FR0011869353": "AMUNDI PEA MSCI EMERGING MARKETS UCITS ETF",
                 "LU1437016972": "AMUNDI MSCI WORLD V UCITS ETF",
                 "FR0000120073": "AIR LIQUIDE",
                 "FR0000121014": "LVMH MOET HENNESSY VUITTON",
@@ -859,7 +905,21 @@
                 "FR0000121972": "SCHNEIDER ELECTRIC",
                 "FR0000131104": "BNP PARIBAS",
                 "FR0000120628": "AXA",
-                "FR0000125486": "VINCI"
+                "FR0000125486": "VINCI",
+                "FR0000120321": "L'OREAL",
+                "FR0000121667": "ESSILORLUXOTTICA",
+                "FR0000052292": "HERMES INTERNATIONAL",
+                "FR0000120644": "DANONE",
+                "FR001400AJ45": "MICHELIN",
+                "FR0000073272": "SAFRAN",
+                "FR0000121329": "THALES",
+                "FR0000124141": "VEOLIA ENVIRONNEMENT",
+                "FR0010208488": "ENGIE",
+                "FR0000133308": "ORANGE",
+                "FR0000130809": "SOCIETE GENERALE",
+                "FR0000045072": "CREDIT AGRICOLE",
+                "FR0000125007": "SAINT-GOBAIN",
+                "FR0000127771": "VIVENDI"
             };
 
             const COINGECKO_IDS = {
@@ -946,6 +1006,14 @@
                 })} ${currency}`;
             }
 
+            function formatQtyNumber(qty) {
+                const val = Number(qty) || 0;
+                return val.toLocaleString("fr-FR", {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 4
+                });
+            }
+
             function formatPercent(pct) {
                 const val = Number(pct) || 0;
                 const absStr = Math.abs(val).toLocaleString("fr-FR", {
@@ -1028,7 +1096,6 @@
                         }
                     }
 
-                    // Récupération éventuelle depuis anciennes clés
                     for (const key of LEGACY_KEYS) {
                         const legacyRaw = localStorage.getItem(key);
                         if (legacyRaw) {
@@ -1046,6 +1113,9 @@
             }
 
             function normalizePosition(p) {
+                const inv = Number(p.investedAmount) || 0;
+                const bp = Number(p.buyPrice) || 0;
+                const q = Number(p.qty) || (bp > 0 ? inv / bp : 0);
                 return {
                     id: p.id || ("pos-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6)),
                     status: p.status === "closed" ? "closed" : "open",
@@ -1054,9 +1124,9 @@
                     code: String(p.code || "").toUpperCase(),
                     entryDate: p.entryDate || getTodayISO(),
                     exitDate: p.exitDate || null,
-                    investedAmount: Number(p.investedAmount) || 0,
-                    qty: Number(p.qty) || 0,
-                    buyPrice: Number(p.buyPrice) || 0,
+                    investedAmount: inv > 0 ? inv : (q > 0 && bp > 0 ? q * bp : 0),
+                    qty: q,
+                    buyPrice: bp,
                     currentPrice: Number(p.currentPrice) || 0,
                     closedAmount: p.closedAmount !== undefined && p.closedAmount !== null ? Number(p.closedAmount) : null,
                     manualCurrentValue: p.manualCurrentValue !== undefined && p.manualCurrentValue !== null ? Number(p.manualCurrentValue) : null,
@@ -1107,7 +1177,6 @@
                 const query = (document.getElementById("searchInput").value || "").trim().toLowerCase();
                 const sortBy = document.getElementById("sortSelect").value;
 
-                // Mise à jour visuelle des pilules de filtre
                 document.querySelectorAll(".filter-pill").forEach(btn => {
                     const isSelected = btn.getAttribute("data-envelope") === appState.activeEnvelope;
                     btn.className = isSelected
@@ -1136,8 +1205,11 @@
                     if (sortBy === "perf_desc") {
                         return mB.pnlPct - mA.pnlPct;
                     }
-                    if (sortBy === "val_desc") {
-                        return mB.currentValue - mA.currentValue;
+                    if (sortBy === "pnl_desc") {
+                        return mB.pnl - mA.pnl;
+                    }
+                    if (sortBy === "inv_desc") {
+                        return mB.invested - mA.invested;
                     }
                     const dA = a.status === "closed" ? (a.exitDate || a.entryDate) : a.entryDate;
                     const dB = b.status === "closed" ? (b.exitDate || b.entryDate) : b.entryDate;
@@ -1234,6 +1306,14 @@
                         ? `<span class="text-[10px] font-mono font-bold text-gray-600 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded">${escapeHTML(pos.code)}</span>`
                         : "";
 
+                    let qtyBadge = "";
+                    if (m.qty > 0) {
+                        const unitWord = pos.envelope === "PEA"
+                            ? (m.qty > 1 ? "actions" : "action")
+                            : (pos.envelope === "Crypto" ? (pos.code || "jetons") : (m.qty > 1 ? "parts" : "part"));
+                        qtyBadge = `<span class="text-[10px] font-semibold text-teal-800 bg-teal-50/80 border border-teal-200/80 px-1.5 py-0.5 rounded">${formatQtyNumber(m.qty)} ${escapeHTML(unitWord)}</span>`;
+                    }
+
                     const buyBadge = m.effectiveBuyUnit > 0
                         ? `<span class="text-[10px] font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">${buyLabel} : ${formatUnitPrice(m.effectiveBuyUnit, currency)}</span>`
                         : `<span class="text-[10px] font-medium text-gray-400 bg-gray-50 border border-gray-200 px-1.5 py-0.5 rounded">${buyLabel} : —</span>`;
@@ -1283,6 +1363,7 @@
                                     </div>
                                     <div class="flex items-center gap-1.5 flex-wrap mt-1.5">
                                         ${codeBadge}
+                                        ${qtyBadge}
                                         ${buyBadge}
                                         ${curBadge}
                                     </div>
@@ -1311,10 +1392,10 @@
                 document.getElementById("addEnvelope").value = appState.activeEnvelope !== "Toutes" ? appState.activeEnvelope : "Linxea Spirit";
                 document.getElementById("addDate").value = getTodayISO();
                 document.getElementById("lblIsinStatus").classList.add("hidden");
+                document.getElementById("lblAddPeaTotalPreview").textContent = "0,00 €";
                 document.getElementById("lblAddEurPreview").textContent = "Parts : —";
-                document.getElementById("lblAddCryptoPreview").textContent = "Quantité : —";
+                document.getElementById("lblAddCryptoPreview").textContent = "Montant investi : — • Quantité : —";
 
-                // Réinitialiser les puces crypto sur BTC
                 selectCryptoChip("BTC", "BITCOIN");
                 toggleAddEnvelopeFields();
 
@@ -1324,16 +1405,30 @@
             function toggleAddEnvelopeFields() {
                 const env = document.getElementById("addEnvelope").value;
                 const isCrypto = env === "Crypto";
+                const isPea = env === "PEA";
+
                 document.getElementById("addFieldsCrypto").classList.toggle("hidden", !isCrypto);
-                document.getElementById("addFieldsEur").classList.toggle("hidden", isCrypto);
+                document.getElementById("addCommonEurHeader").classList.toggle("hidden", isCrypto);
+                document.getElementById("addFieldsPea").classList.toggle("hidden", !isPea);
+                document.getElementById("addFieldsNav").classList.toggle("hidden", isCrypto || isPea);
+
+                const lblName = document.getElementById("lblAddEurName");
+                const inpName = document.getElementById("addEurName");
+                if (isPea) {
+                    lblName.textContent = "Nom de l'action / du support *";
+                    inpName.placeholder = "Ex: AIR LIQUIDE ou ISHARES MSCI WORLD PEA";
+                } else {
+                    lblName.textContent = "Nom du support *";
+                    inpName.placeholder = "Ex: AMUNDI MSCI EMERGING MARKETS";
+                }
             }
 
             function selectCryptoChip(ticker, name) {
                 document.querySelectorAll(".crypto-chip").forEach(chip => {
                     const match = chip.getAttribute("data-ticker") === ticker;
                     chip.className = match
-                        ? "crypto-chip py-2 rounded-xl text-xs font-bold border bg-[#007A63] text-white border-[#007A63] cursor-pointer"
-                        : "crypto-chip py-2 rounded-xl text-xs font-bold border bg-white text-gray-700 border-gray-200 cursor-pointer";
+                        ? "crypto-chip py-1.5 rounded-xl text-xs font-bold border bg-[#007A63] text-white border-[#007A63] cursor-pointer"
+                        : "crypto-chip py-1.5 rounded-xl text-xs font-bold border bg-white text-gray-700 border-gray-200 cursor-pointer";
                 });
                 const tickerInput = document.getElementById("addCryptoTicker");
                 const nameInput = document.getElementById("addCryptoName");
@@ -1344,31 +1439,54 @@
                 }
             }
 
-            function updateAddPreviews() {
-                // Calcul EUR
+            function updateAddPreviews(changedSource) {
+                // 1) Prévisualisation PEA : Quantité × Prix unitaire = Montant total investi
+                const peaQty = parseFloat(document.getElementById("addPeaQty").value) || 0;
+                const peaUnit = parseFloat(document.getElementById("addPeaUnitPrice").value) || 0;
+                const peaTotal = peaQty * peaUnit;
+                document.getElementById("lblAddPeaTotalPreview").textContent = formatMoney(peaTotal, "€");
+
+                // 2) Prévisualisation Assurance-vie / PER : Montant investi / VL = Parts
                 const eurInv = parseFloat(document.getElementById("addEurInvested").value) || 0;
                 const eurUnit = parseFloat(document.getElementById("addEurUnitPrice").value) || 0;
                 const eurQtyInput = document.getElementById("addEurQty");
                 if (eurInv > 0 && eurUnit > 0) {
                     const calcQty = eurInv / eurUnit;
                     eurQtyInput.value = Number(calcQty.toFixed(4));
-                    document.getElementById("lblAddEurPreview").textContent = `Parts : ${calcQty.toLocaleString("fr-FR", { maximumFractionDigits: 4 })}`;
+                    document.getElementById("lblAddEurPreview").textContent = `Parts : ${formatQtyNumber(calcQty)}`;
                 } else {
                     const manualQty = parseFloat(eurQtyInput.value) || 0;
                     document.getElementById("lblAddEurPreview").textContent = manualQty > 0
-                        ? `Parts : ${manualQty.toLocaleString("fr-FR", { maximumFractionDigits: 4 })}`
+                        ? `Parts : ${formatQtyNumber(manualQty)}`
                         : "Parts : —";
                 }
 
-                // Calcul Crypto
-                const cInv = parseFloat(document.getElementById("addCryptoInvested").value) || 0;
+                // 3) Prévisualisation Crypto croisée (Quantité <-> Montant investi)
+                const cQtyInput = document.getElementById("addCryptoQty");
+                const cInvInput = document.getElementById("addCryptoInvested");
                 const cUnit = parseFloat(document.getElementById("addCryptoUnitPrice").value) || 0;
-                if (cInv > 0 && cUnit > 0) {
-                    const cQty = cInv / cUnit;
-                    document.getElementById("lblAddCryptoPreview").textContent = `Quantité : ${cQty.toLocaleString("fr-FR", { maximumFractionDigits: 6 })}`;
-                } else {
-                    document.getElementById("lblAddCryptoPreview").textContent = "Quantité : —";
+                let cQty = parseFloat(cQtyInput.value) || 0;
+                let cInv = parseFloat(cInvInput.value) || 0;
+
+                if (changedSource === "crypto-qty" && cQty > 0 && cUnit > 0) {
+                    cInv = cQty * cUnit;
+                    cInvInput.value = Number(cInv.toFixed(2));
+                } else if (changedSource === "crypto-inv" && cInv > 0 && cUnit > 0) {
+                    cQty = cInv / cUnit;
+                    cQtyInput.value = Number(cQty.toFixed(6));
+                } else if (changedSource === "crypto-unit" && cUnit > 0) {
+                    if (cQty > 0) {
+                        cInv = cQty * cUnit;
+                        cInvInput.value = Number(cInv.toFixed(2));
+                    } else if (cInv > 0) {
+                        cQty = cInv / cUnit;
+                        cQtyInput.value = Number(cQty.toFixed(6));
+                    }
                 }
+
+                const invLabel = cInv > 0 ? formatMoney(cInv, "USDC") : "—";
+                const qtyLabel = cQty > 0 ? formatQtyNumber(cQty) : "—";
+                document.getElementById("lblAddCryptoPreview").textContent = `Montant investi : ${invLabel} • Quantité : ${qtyLabel}`;
             }
 
             async function lookupIsinName() {
@@ -1385,14 +1503,12 @@
                 statusEl.className = "text-[11px] text-[#007A63] font-semibold mt-1";
                 statusEl.textContent = "Recherche du support en cours...";
 
-                // 1) Vérification dictionnaire local immédiate
                 if (KNOWN_ISINS[rawIsin]) {
                     nameInput.value = KNOWN_ISINS[rawIsin];
                     statusEl.textContent = "Support reconnu automatiquement.";
                     return;
                 }
 
-                // 2) Appel OpenFIGI avec timeout 4s
                 try {
                     const controller = new AbortController();
                     const timer = setTimeout(() => controller.abort(), 4000);
@@ -1417,7 +1533,7 @@
                         }
                     }
                 } catch (err) {
-                    // Ignorer erreur réseau / CORS et inviter à saisir le nom
+                    // Repli manuel propre
                 }
 
                 statusEl.className = "text-[11px] text-amber-700 mt-1";
@@ -1456,7 +1572,7 @@
                 const price = await fetchCryptoPriceUSD(ticker);
                 if (price && price > 0) {
                     document.getElementById("addCryptoUnitPrice").value = price;
-                    updateAddPreviews();
+                    updateAddPreviews("crypto-unit");
                     showToast(`Cours ${ticker.toUpperCase()} : ${price} USDC`);
                 } else {
                     showToast("Cours indisponible en ligne, saisissez-le manuellement");
@@ -1469,6 +1585,7 @@
                 const entryDate = document.getElementById("addDate").value || getTodayISO();
                 const note = (document.getElementById("addNote").value || "").trim();
                 const isCrypto = envelope === "Crypto";
+                const isPea = envelope === "PEA";
 
                 let name = "";
                 let code = "";
@@ -1479,13 +1596,33 @@
                 if (isCrypto) {
                     code = (document.getElementById("addCryptoTicker").value || "").trim().toUpperCase();
                     name = (document.getElementById("addCryptoName").value || code).trim().toUpperCase();
+                    qty = parseFloat(document.getElementById("addCryptoQty").value) || 0;
                     invested = parseFloat(document.getElementById("addCryptoInvested").value) || 0;
                     buyPrice = parseFloat(document.getElementById("addCryptoUnitPrice").value) || 0;
+
+                    if (invested <= 0 && qty > 0 && buyPrice > 0) {
+                        invested = qty * buyPrice;
+                    } else if (qty <= 0 && invested > 0 && buyPrice > 0) {
+                        qty = invested / buyPrice;
+                    } else if (buyPrice <= 0 && invested > 0 && qty > 0) {
+                        buyPrice = invested / qty;
+                    }
+
                     if (!name || invested <= 0) {
-                        showToast("Veuillez saisir la crypto et le montant investi");
+                        showToast("Saisissez la crypto, la quantité et/ou le montant USDC");
                         return;
                     }
-                    qty = buyPrice > 0 ? invested / buyPrice : 0;
+                } else if (isPea) {
+                    code = (document.getElementById("addEurIsin").value || "").trim().toUpperCase();
+                    name = (document.getElementById("addEurName").value || "").trim().toUpperCase();
+                    qty = parseFloat(document.getElementById("addPeaQty").value) || 0;
+                    buyPrice = parseFloat(document.getElementById("addPeaUnitPrice").value) || 0;
+
+                    if (!name || qty <= 0 || buyPrice <= 0) {
+                        showToast("Saisissez le nom, la quantité d'actions et le prix unitaire");
+                        return;
+                    }
+                    invested = qty * buyPrice;
                 } else {
                     code = (document.getElementById("addEurIsin").value || "").trim().toUpperCase();
                     name = (document.getElementById("addEurName").value || "").trim().toUpperCase();
@@ -1522,9 +1659,12 @@
                 });
 
                 const currency = getCurrency(envelope);
-                const detailStr = buyPrice > 0
-                    ? `Investi ${formatMoney(invested, currency)} • Achat ${formatUnitPrice(buyPrice, currency)}`
-                    : `Investi ${formatMoney(invested, currency)}`;
+                let detailStr = `Investi ${formatMoney(invested, currency)}`;
+                if (isPea && qty > 0 && buyPrice > 0) {
+                    detailStr = `${formatQtyNumber(qty)} action(s) × ${formatUnitPrice(buyPrice, currency)} = ${formatMoney(invested, currency)}`;
+                } else if (buyPrice > 0) {
+                    detailStr += ` • Achat ${formatUnitPrice(buyPrice, currency)}`;
+                }
 
                 recordHistory(newPos, {
                     type: "CREATE",
@@ -1565,11 +1705,14 @@
                     exitDateGroup.classList.add("hidden");
                 }
 
-                document.getElementById("lblEditInvested").textContent = `Montant investi (${currency}) *`;
-                document.getElementById("editInvested").value = pos.investedAmount;
+                document.getElementById("lblEditQty").textContent = pos.envelope === "PEA" ? "Actions" : (pos.envelope === "Crypto" ? "Jetons" : "Parts");
+                document.getElementById("editQty").value = m.qty > 0 ? Number(m.qty.toFixed(6)) : "";
 
-                document.getElementById("lblEditBuyPrice").textContent = `VL / Cours achat (${currency})`;
+                document.getElementById("lblEditBuyPrice").textContent = `Achat (${currency})`;
                 document.getElementById("editBuyPrice").value = pos.buyPrice > 0 ? pos.buyPrice : "";
+
+                document.getElementById("lblEditInvested").textContent = `Investi (${currency}) *`;
+                document.getElementById("editInvested").value = Number((pos.investedAmount || 0).toFixed(2));
 
                 document.getElementById("lblEditCurrentPrice").textContent = isClosed
                     ? `VL / Cours de sortie (${currency})`
@@ -1583,10 +1726,8 @@
 
                 document.getElementById("editNote").value = pos.note || "";
 
-                // Bouton cours en ligne crypto
                 document.getElementById("btnFetchEditCrypto").classList.toggle("hidden", pos.envelope !== "Crypto");
 
-                // Propagation aux entrées sœurs
                 const gKey = getGroupKey(pos);
                 const siblingsCount = appState.positions.filter(p => p.id !== pos.id && p.status === "open" && getGroupKey(p) === gKey).length;
                 const propBox = document.getElementById("propagateBox");
@@ -1599,12 +1740,10 @@
                     propBox.classList.add("hidden");
                 }
 
-                // Boutons Clôturer vs Réouvrir
                 document.getElementById("btnShowClosePanel").classList.toggle("hidden", isClosed);
                 document.getElementById("btnReopenPosition").classList.toggle("hidden", !isClosed);
                 document.getElementById("closePanel").classList.add("hidden");
 
-                // Réinitialiser suppression & historique
                 document.getElementById("confirmDeleteBox").classList.add("hidden");
                 document.getElementById("btnAskDelete").classList.remove("hidden");
                 document.getElementById("posHistoryBody").classList.add("hidden");
@@ -1619,14 +1758,17 @@
                 const pos = appState.positions.find(p => p.id === appState.editingId);
                 if (!pos) return;
                 const currency = getCurrency(pos.envelope);
+                const qty = parseFloat(document.getElementById("editQty").value) || 0;
                 const invested = parseFloat(document.getElementById("editInvested").value) || 0;
                 const buyPrice = parseFloat(document.getElementById("editBuyPrice").value) || 0;
                 const curPrice = parseFloat(document.getElementById("editCurrentPrice").value) || 0;
                 const manualTot = parseFloat(document.getElementById("editCurrentTotal").value);
 
+                const effectiveQty = qty > 0 ? qty : (buyPrice > 0 ? invested / buyPrice : 0);
+
                 let curVal = invested;
-                if (buyPrice > 0 && curPrice > 0) {
-                    curVal = (invested / buyPrice) * curPrice;
+                if (effectiveQty > 0 && curPrice > 0) {
+                    curVal = effectiveQty * curPrice;
                 } else if (!isNaN(manualTot) && manualTot >= 0) {
                     curVal = manualTot;
                 }
@@ -1676,6 +1818,7 @@
                 const newName = (document.getElementById("editName").value || "").trim().toUpperCase();
                 const newCode = (document.getElementById("editCode").value || "").trim().toUpperCase();
                 const newEntryDate = document.getElementById("editEntryDate").value || pos.entryDate;
+                const inputQty = parseFloat(document.getElementById("editQty").value) || 0;
                 const invested = parseFloat(document.getElementById("editInvested").value) || 0;
                 const buyPrice = parseFloat(document.getElementById("editBuyPrice").value) || 0;
                 const curPrice = parseFloat(document.getElementById("editCurrentPrice").value) || 0;
@@ -1693,7 +1836,7 @@
                 pos.investedAmount = invested;
                 pos.buyPrice = buyPrice;
                 pos.currentPrice = curPrice;
-                pos.qty = buyPrice > 0 ? invested / buyPrice : 0;
+                pos.qty = inputQty > 0 ? inputQty : (buyPrice > 0 ? invested / buyPrice : 0);
                 pos.note = newNote;
 
                 if (pos.status === "closed") {
@@ -1702,14 +1845,13 @@
                         pos.closedAmount = manualTot;
                     }
                 } else {
-                    if (buyPrice <= 0 && !isNaN(manualTot) && manualTot >= 0) {
+                    if (pos.qty <= 0 && !isNaN(manualTot) && manualTot >= 0) {
                         pos.manualCurrentValue = manualTot;
                     } else {
                         pos.manualCurrentValue = null;
                     }
                 }
 
-                // Trace dans l'historique
                 if (curPrice > 0 && Math.abs(curPrice - oldCurPrice) > 1e-7) {
                     recordHistory(pos, {
                         type: "PRICE",
@@ -1747,8 +1889,8 @@
                             if (!other.buyPrice || other.buyPrice <= 0) {
                                 other.buyPrice = curPrice;
                                 other.qty = other.investedAmount > 0 ? other.investedAmount / curPrice : 0;
-                            } else {
-                                other.qty = other.investedAmount > 0 ? other.investedAmount / other.buyPrice : other.qty;
+                            } else if (!other.qty || other.qty <= 0) {
+                                other.qty = other.investedAmount > 0 ? other.investedAmount / other.buyPrice : 0;
                             }
                             other.manualCurrentValue = null;
                             if (Math.abs(curPrice - prevP) > 1e-7) {
@@ -1822,7 +1964,8 @@
 
                 const invested = parseFloat(document.getElementById("editInvested").value) || pos.investedAmount;
                 const buyPrice = parseFloat(document.getElementById("editBuyPrice").value) || pos.buyPrice || 0;
-                const qty = buyPrice > 0 ? invested / buyPrice : pos.qty;
+                const inputQty = parseFloat(document.getElementById("editQty").value) || 0;
+                const qty = inputQty > 0 ? inputQty : (buyPrice > 0 ? invested / buyPrice : pos.qty);
 
                 pos.investedAmount = invested;
                 pos.buyPrice = buyPrice;
@@ -1881,7 +2024,6 @@
                     return;
                 }
 
-                // Regroupement par support unique
                 const groupsMap = new Map();
                 openPositions.forEach(pos => {
                     const key = getGroupKey(pos);
@@ -1894,11 +2036,13 @@
                             envelope: pos.envelope,
                             currency: getCurrency(pos.envelope),
                             count: 0,
+                            totalQty: 0,
                             currentUnit: m.effectiveCurrentUnit || m.effectiveBuyUnit || 0
                         });
                     }
                     const g = groupsMap.get(key);
                     g.count += 1;
+                    g.totalQty += m.qty;
                     if (m.effectiveCurrentUnit > 0) {
                         g.currentUnit = m.effectiveCurrentUnit;
                     }
@@ -1908,6 +2052,9 @@
                 container.innerHTML = groups.map(g => {
                     const codeTag = g.code
                         ? `<span class="font-mono text-[10px] bg-white border border-gray-200 text-gray-600 px-1.5 py-0.5 rounded">${escapeHTML(g.code)}</span>`
+                        : "";
+                    const qtyTag = g.totalQty > 0
+                        ? `<span class="text-[10px] font-semibold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded-full">Total : ${formatQtyNumber(g.totalQty)}</span>`
                         : "";
                     const curStr = g.currentUnit > 0 ? formatUnitPrice(g.currentUnit, g.currency) : "Non défini";
 
@@ -1920,6 +2067,7 @@
                                         <span class="text-[10px] font-bold text-[#007A63]">${escapeHTML(g.envelope)}</span>
                                         ${codeTag}
                                         <span class="text-[10px] font-semibold bg-teal-50 text-[#007A63] px-1.5 py-0.5 rounded-full">${g.count} entrée(s)</span>
+                                        ${qtyTag}
                                     </div>
                                 </div>
                             </div>
@@ -1968,8 +2116,8 @@
                         if (!pos.buyPrice || pos.buyPrice <= 0) {
                             pos.buyPrice = nextPrice;
                             pos.qty = pos.investedAmount > 0 ? pos.investedAmount / nextPrice : 0;
-                        } else {
-                            pos.qty = pos.investedAmount > 0 ? pos.investedAmount / pos.buyPrice : pos.qty;
+                        } else if (!pos.qty || pos.qty <= 0) {
+                            pos.qty = pos.investedAmount > 0 ? pos.investedAmount / pos.buyPrice : 0;
                         }
                         pos.manualCurrentValue = null;
 
@@ -2135,7 +2283,7 @@
             }
 
             function exportCsvFile() {
-                const headers = ["Enveloppe", "Statut", "Support", "ISIN_Ticker", "Date", "Investi", "Actuel_Sortie", "Gain_Perte", "Devise", "Performance_Pct", "Note"];
+                const headers = ["Enveloppe", "Statut", "Support", "ISIN_Ticker", "Date", "Quantite", "Prix_Achat", "Investi", "Actuel_Sortie", "Gain_Perte", "Devise", "Performance_Pct", "Note"];
                 const rows = appState.positions.map(pos => {
                     const m = computeMetrics(pos);
                     const cur = getCurrency(pos.envelope);
@@ -2147,6 +2295,8 @@
                         `"${pos.name}"`,
                         `"${pos.code || ""}"`,
                         d,
+                        m.qty > 0 ? m.qty.toFixed(6) : "",
+                        m.effectiveBuyUnit > 0 ? m.effectiveBuyUnit.toFixed(4) : "",
                         m.invested.toFixed(2),
                         m.currentValue.toFixed(2),
                         m.pnl.toFixed(2),
@@ -2181,17 +2331,15 @@
                 }
             }
 
-            // 12. UTILITAIRES MODALES & DÉLÉGATION D'ÉVÉNEMENTS CENTRALISÉE
+            // 12. DÉLÉGATION D'ÉVÉNEMENTS CENTRALISÉE SUR DOCUMENT
             function closeModal(modalId) {
                 const el = document.getElementById(modalId);
                 if (el) el.classList.add("hidden");
             }
 
-            // Délégation globale unique pour tous les clics de boutons
             document.addEventListener("click", function (e) {
                 const target = e.target.closest("[data-action]");
                 if (!target) {
-                    // Fermeture au clic sur le fond sombre d'une modale
                     if (e.target.classList.contains("fixed") && e.target.id && e.target.id.startsWith("modal")) {
                         e.target.classList.add("hidden");
                     }
@@ -2283,6 +2431,13 @@
                         fetchCryptoPriceUSD(code).then(price => {
                             if (price && price > 0) {
                                 document.getElementById("editCurrentPrice").value = price;
+                                const qty = parseFloat(document.getElementById("editQty").value) || 0;
+                                const invested = parseFloat(document.getElementById("editInvested").value) || 0;
+                                const buyPrice = parseFloat(document.getElementById("editBuyPrice").value) || 0;
+                                const effQty = qty > 0 ? qty : (buyPrice > 0 ? invested / buyPrice : 0);
+                                if (effQty > 0) {
+                                    document.getElementById("editCurrentTotal").value = Number((effQty * price).toFixed(2));
+                                }
                                 refreshEditPerfSummary();
                                 showToast(`Cours actuel : ${price} USDC`);
                             } else {
@@ -2392,16 +2547,19 @@
                 }
             });
 
-            // Écouteurs de formulaires & saisies
+            // Écouteurs d'entrées et formulaires
             document.getElementById("searchInput").addEventListener("input", renderAll);
             document.getElementById("sortSelect").addEventListener("change", renderAll);
 
             document.getElementById("addEnvelope").addEventListener("change", toggleAddEnvelopeFields);
-            document.getElementById("addEurInvested").addEventListener("input", updateAddPreviews);
-            document.getElementById("addEurUnitPrice").addEventListener("input", updateAddPreviews);
-            document.getElementById("addEurQty").addEventListener("input", updateAddPreviews);
-            document.getElementById("addCryptoInvested").addEventListener("input", updateAddPreviews);
-            document.getElementById("addCryptoUnitPrice").addEventListener("input", updateAddPreviews);
+            document.getElementById("addPeaQty").addEventListener("input", () => updateAddPreviews("pea-qty"));
+            document.getElementById("addPeaUnitPrice").addEventListener("input", () => updateAddPreviews("pea-unit"));
+            document.getElementById("addEurInvested").addEventListener("input", () => updateAddPreviews("eur-inv"));
+            document.getElementById("addEurUnitPrice").addEventListener("input", () => updateAddPreviews("eur-unit"));
+            document.getElementById("addEurQty").addEventListener("input", () => updateAddPreviews("eur-qty"));
+            document.getElementById("addCryptoQty").addEventListener("input", () => updateAddPreviews("crypto-qty"));
+            document.getElementById("addCryptoInvested").addEventListener("input", () => updateAddPreviews("crypto-inv"));
+            document.getElementById("addCryptoUnitPrice").addEventListener("input", () => updateAddPreviews("crypto-unit"));
 
             document.getElementById("addEurIsin").addEventListener("input", function () {
                 const val = (this.value || "").trim().toUpperCase();
@@ -2413,26 +2571,58 @@
             document.getElementById("formAdd").addEventListener("submit", handleAddSubmit);
             document.getElementById("formEdit").addEventListener("submit", handleEditSubmit);
 
-            document.getElementById("editInvested").addEventListener("input", refreshEditPerfSummary);
-            document.getElementById("editBuyPrice").addEventListener("input", refreshEditPerfSummary);
-            document.getElementById("editCurrentPrice").addEventListener("input", function () {
-                const invested = parseFloat(document.getElementById("editInvested").value) || 0;
+            // Synchronisation dynamique dans la modale d'édition (Quantité × Prix achat = Investi)
+            document.getElementById("editQty").addEventListener("input", function () {
+                const qty = parseFloat(this.value) || 0;
                 const buyPrice = parseFloat(document.getElementById("editBuyPrice").value) || 0;
-                const curPrice = parseFloat(this.value) || 0;
-                if (buyPrice > 0 && curPrice > 0) {
-                    document.getElementById("editCurrentTotal").value = Number(((invested / buyPrice) * curPrice).toFixed(2));
+                const curPrice = parseFloat(document.getElementById("editCurrentPrice").value) || 0;
+                if (qty > 0 && buyPrice > 0) {
+                    document.getElementById("editInvested").value = Number((qty * buyPrice).toFixed(2));
+                }
+                if (qty > 0 && curPrice > 0) {
+                    document.getElementById("editCurrentTotal").value = Number((qty * curPrice).toFixed(2));
                 }
                 refreshEditPerfSummary();
             });
+
+            document.getElementById("editBuyPrice").addEventListener("input", function () {
+                const qty = parseFloat(document.getElementById("editQty").value) || 0;
+                const buyPrice = parseFloat(this.value) || 0;
+                if (qty > 0 && buyPrice > 0) {
+                    document.getElementById("editInvested").value = Number((qty * buyPrice).toFixed(2));
+                }
+                refreshEditPerfSummary();
+            });
+
+            document.getElementById("editInvested").addEventListener("input", function () {
+                const invested = parseFloat(this.value) || 0;
+                const buyPrice = parseFloat(document.getElementById("editBuyPrice").value) || 0;
+                if (invested > 0 && buyPrice > 0) {
+                    document.getElementById("editQty").value = Number((invested / buyPrice).toFixed(6));
+                }
+                refreshEditPerfSummary();
+            });
+
+            document.getElementById("editCurrentPrice").addEventListener("input", function () {
+                const qty = parseFloat(document.getElementById("editQty").value) || 0;
+                const invested = parseFloat(document.getElementById("editInvested").value) || 0;
+                const buyPrice = parseFloat(document.getElementById("editBuyPrice").value) || 0;
+                const curPrice = parseFloat(this.value) || 0;
+                const effQty = qty > 0 ? qty : (buyPrice > 0 ? invested / buyPrice : 0);
+                if (effQty > 0 && curPrice > 0) {
+                    document.getElementById("editCurrentTotal").value = Number((effQty * curPrice).toFixed(2));
+                }
+                refreshEditPerfSummary();
+            });
+
             document.getElementById("editCurrentTotal").addEventListener("input", function () {
+                const qty = parseFloat(document.getElementById("editQty").value) || 0;
                 const invested = parseFloat(document.getElementById("editInvested").value) || 0;
                 const buyPrice = parseFloat(document.getElementById("editBuyPrice").value) || 0;
                 const totalVal = parseFloat(this.value);
-                if (buyPrice > 0 && invested > 0 && !isNaN(totalVal) && totalVal >= 0) {
-                    const qty = invested / buyPrice;
-                    if (qty > 0) {
-                        document.getElementById("editCurrentPrice").value = Number((totalVal / qty).toFixed(4));
-                    }
+                const effQty = qty > 0 ? qty : (buyPrice > 0 ? invested / buyPrice : 0);
+                if (effQty > 0 && !isNaN(totalVal) && totalVal >= 0) {
+                    document.getElementById("editCurrentPrice").value = Number((totalVal / effQty).toFixed(4));
                 }
                 refreshEditPerfSummary();
             });
@@ -2440,11 +2630,13 @@
             document.getElementById("closeUnitPrice").addEventListener("input", function () {
                 const pos = appState.positions.find(p => p.id === appState.editingId);
                 if (!pos) return;
+                const qty = parseFloat(document.getElementById("editQty").value) || 0;
                 const invested = parseFloat(document.getElementById("editInvested").value) || pos.investedAmount;
                 const buyPrice = parseFloat(document.getElementById("editBuyPrice").value) || pos.buyPrice || 0;
+                const effQty = qty > 0 ? qty : (buyPrice > 0 ? invested / buyPrice : 0);
                 const unitOut = parseFloat(this.value) || 0;
-                if (buyPrice > 0 && unitOut > 0) {
-                    document.getElementById("closeTotalAmount").value = Number(((invested / buyPrice) * unitOut).toFixed(2));
+                if (effQty > 0 && unitOut > 0) {
+                    document.getElementById("closeTotalAmount").value = Number((effQty * unitOut).toFixed(2));
                 }
                 updateClosePreview();
             });
