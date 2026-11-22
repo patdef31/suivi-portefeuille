@@ -82,9 +82,9 @@
 
     <!-- ==================== EN-TÊTE ==================== -->
     <header class="bg-white border-b border-[#E2E8E5] sticky top-0 z-30">
-        <div class="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
+        <div class="max-w-lg mx-auto px-3.5 h-14 flex items-center justify-between gap-2">
             <!-- Logo vert sarcelle -->
-            <div class="flex items-center gap-2.5">
+            <div class="flex items-center gap-2 shrink-0">
                 <div class="w-8 h-8 rounded-lg bg-[#007A63] flex items-center justify-center relative shadow-2xs">
                     <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
                         <rect x="4" y="13" width="3.5" height="6" rx="0.8"/>
@@ -96,14 +96,23 @@
                 <span class="font-extrabold text-lg tracking-tight text-[#007A63]">CVATP</span>
             </div>
 
-            <!-- Bouton Actualiser + Menu Burger -->
-            <div class="flex items-center gap-2">
+            <!-- Actions Header : Cours / VL (groupé) + Actualiser en ligne + Menu Burger -->
+            <div class="flex items-center gap-1.5">
+                <button type="button" id="btnOpenBulkValues"
+                    class="px-2.5 py-1.5 rounded-xl text-gray-800 bg-gray-100 hover:bg-gray-200 border border-[#E2E8E5] text-xs font-bold flex items-center gap-1 active:scale-95 transition">
+                    <svg class="w-3.5 h-3.5 text-[#007A63]" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    <span>Cours / VL</span>
+                </button>
+
                 <button type="button" id="btnBatchRefresh"
-                    class="px-2.5 py-1.5 rounded-xl text-[#007A63] bg-teal-50/80 hover:bg-teal-100 border border-teal-200/80 text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition">
+                    class="px-2.5 py-1.5 rounded-xl text-[#007A63] bg-teal-50/80 hover:bg-teal-100 border border-teal-200/80 text-xs font-semibold flex items-center gap-1 active:scale-95 transition">
                     <svg id="batchRefreshIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                     </svg>
-                    <span>Actualiser les cours</span>
+                    <span class="hidden sm:inline">Actualiser</span>
+                    <span class="sm:hidden">Auto</span>
                 </button>
 
                 <button type="button" id="btnOpenMenu" aria-label="Menu sauvegarde et paramètres"
@@ -336,7 +345,7 @@
                     </div>
 
                     <div>
-                        <label for="addCryptoUnitPrice" class="block text-xs font-semibold text-gray-700 mb-1">Prix d'achat unitaire (USDC) <span class="text-gray-400 font-normal">(optionnel si inconnu)</span></label>
+                        <label for="addCryptoUnitPrice" class="block text-xs font-semibold text-gray-700 mb-1">Cours d'achat (USDC) <span class="text-gray-400 font-normal">(opt.)</span></label>
                         <div class="flex gap-2">
                             <input type="number" step="any" min="0" id="addCryptoUnitPrice" placeholder="Ex: 85000"
                                 class="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63]">
@@ -346,73 +355,88 @@
                             </button>
                         </div>
                         <p id="previewAddCryptoQty" class="text-[11px] font-semibold text-[#007A63] mt-1.5">
-                            Quantité calculée : 0 BTC
+                            Quantité calculée : en attente du prix unitaire
                         </p>
                     </div>
                 </div>
 
-                <!-- 2) BLOC ASSURANCE-VIE & PER / PERCO (Montant € + VL € optionnelle + ISIN optionnel) -->
+                <!-- 2) BLOC ASSURANCE-VIE & PER / PERCO (Code ISIN en premier + Nom + Montant € + VL €) -->
                 <div id="sectionAddAvPer" class="hidden space-y-3">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label for="addAvName" class="block text-xs font-semibold text-gray-700 mb-1">Nom du support *</label>
-                            <input type="text" id="addAvName" placeholder="Ex: COMGEST MONDE C"
-                                class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm uppercase focus:outline-none focus:border-[#007A63] focus:bg-white">
+                    <div>
+                        <label for="addAvIsin" class="block text-xs font-semibold text-gray-700 mb-1">Code ISIN (optionnel)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="addAvIsin" maxlength="12" placeholder="Ex: LU1681045370"
+                                class="flex-1 bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:border-[#007A63] focus:bg-white">
+                            <button type="button" id="btnLookupAvIsin"
+                                class="shrink-0 px-3 py-2 bg-teal-50 text-[#007A63] border border-teal-200 rounded-xl text-xs font-bold hover:bg-teal-100 active:scale-95 transition">
+                                Rechercher
+                            </button>
                         </div>
-                        <div>
-                            <label for="addAvIsin" class="block text-xs font-semibold text-gray-700 mb-1">Code ISIN (optionnel)</label>
-                            <input type="text" id="addAvIsin" placeholder="Ex: FR0000284689"
-                                class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:border-[#007A63] focus:bg-white">
-                        </div>
+                        <p id="statusAvIsinLookup" class="text-[11px] text-gray-500 mt-1 hidden"></p>
+                    </div>
+
+                    <div>
+                        <label for="addAvName" class="block text-xs font-semibold text-gray-700 mb-1">Nom du support *</label>
+                        <input type="text" id="addAvName" placeholder="Ex: AMUNDI MSCI EMERGING MARKETS"
+                            class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm uppercase focus:outline-none focus:border-[#007A63] focus:bg-white">
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label for="addAvInvested" class="block text-xs font-semibold text-gray-700 mb-1">Montant investi (€) *</label>
-                            <input type="number" step="any" min="0.01" id="addAvInvested" placeholder="Ex: 1000"
+                            <input type="number" step="any" min="0.01" id="addAvInvested" placeholder="Ex: 1500"
                                 class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#007A63] focus:bg-white">
                         </div>
                         <div>
                             <label for="addAvVl" class="block text-xs font-semibold text-gray-700 mb-1">VL d'achat (€) <span class="text-gray-400 font-normal">(opt.)</span></label>
-                            <input type="number" step="any" min="0" id="addAvVl" placeholder="Ex: 124.50"
+                            <input type="number" step="any" min="0" id="addAvVl" placeholder="Ex: 7.01"
                                 class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63] focus:bg-white">
                         </div>
                     </div>
                     <p id="previewAddAvParts" class="text-[11px] font-semibold text-[#007A63]">
-                        Nombre de parts calculé : 0 parts
+                        Nombre de parts calculé : en attente de la VL
                     </p>
                 </div>
 
-                <!-- 3) BLOC PEA (Quantité de titres + Prix unitaire € + ISIN) -->
+                <!-- 3) BLOC PEA (Code ISIN en premier + Nom + Quantité/Montant + Prix unitaire €) -->
                 <div id="sectionAddPea" class="hidden space-y-3">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label for="addPeaName" class="block text-xs font-semibold text-gray-700 mb-1">Nom action ou ETF *</label>
-                            <input type="text" id="addPeaName" placeholder="Ex: AIR LIQUIDE"
-                                class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm uppercase focus:outline-none focus:border-[#007A63] focus:bg-white">
+                    <div>
+                        <label for="addPeaIsin" class="block text-xs font-semibold text-gray-700 mb-1">Code ISIN *</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="addPeaIsin" maxlength="12" placeholder="Ex: FR0000120073"
+                                class="flex-1 bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:border-[#007A63] focus:bg-white">
+                            <button type="button" id="btnLookupPeaIsin"
+                                class="shrink-0 px-3 py-2 bg-teal-50 text-[#007A63] border border-teal-200 rounded-xl text-xs font-bold hover:bg-teal-100 active:scale-95 transition">
+                                Rechercher
+                            </button>
                         </div>
-                        <div>
-                            <label for="addPeaIsin" class="block text-xs font-semibold text-gray-700 mb-1">Code ISIN *</label>
-                            <input type="text" id="addPeaIsin" placeholder="Ex: FR0000120073"
-                                class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:border-[#007A63] focus:bg-white">
-                        </div>
+                        <p id="statusPeaIsinLookup" class="text-[11px] text-gray-500 mt-1 hidden"></p>
+                    </div>
+
+                    <div>
+                        <label for="addPeaName" class="block text-xs font-semibold text-gray-700 mb-1">Nom action ou ETF *</label>
+                        <input type="text" id="addPeaName" placeholder="Ex: AIR LIQUIDE"
+                            class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm uppercase focus:outline-none focus:border-[#007A63] focus:bg-white">
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label for="addPeaQty" class="block text-xs font-semibold text-gray-700 mb-1">Quantité de titres *</label>
-                            <input type="number" step="any" min="0.0001" id="addPeaQty" placeholder="Ex: 10"
+                            <label for="addPeaQty" class="block text-xs font-semibold text-gray-700 mb-1">Nombre de titres</label>
+                            <input type="number" step="any" min="0" id="addPeaQty" placeholder="Ex: 10"
                                 class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63] focus:bg-white">
                         </div>
                         <div>
-                            <label for="addPeaUnitPrice" class="block text-xs font-semibold text-gray-700 mb-1">Prix d'achat unitaire (€) *</label>
-                            <input type="number" step="any" min="0.0001" id="addPeaUnitPrice" placeholder="Ex: 168.40"
+                            <label for="addPeaUnitPrice" class="block text-xs font-semibold text-gray-700 mb-1">Prix unitaire (€)</label>
+                            <input type="number" step="any" min="0" id="addPeaUnitPrice" placeholder="Ex: 168.40"
                                 class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#007A63] focus:bg-white">
                         </div>
                     </div>
-                    <p id="previewAddPeaTotal" class="text-[11px] font-semibold text-[#007A63]">
-                        Montant investi calculé : 0,00 €
-                    </p>
+
+                    <div>
+                        <label for="addPeaInvested" class="block text-xs font-semibold text-gray-700 mb-1">Ou montant total investi (€) *</label>
+                        <input type="number" step="any" min="0.01" id="addPeaInvested" placeholder="Calculé auto ou saisi directement"
+                            class="w-full bg-gray-50 border border-[#E2E8E5] rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#007A63] focus:bg-white">
+                    </div>
                 </div>
 
                 <!-- Date de l'entrée -->
@@ -489,8 +513,8 @@
                     </div>
                 </div>
 
-                <!-- Bloc Cours actuel / VL de référence -->
-                <div class="bg-teal-50/60 border border-teal-200/70 rounded-2xl p-3.5 space-y-2">
+                <!-- Bloc Cours actuel / VL OU Montant actualisé direct -->
+                <div class="bg-teal-50/60 border border-teal-200/70 rounded-2xl p-3.5 space-y-2.5">
                     <div class="flex items-center justify-between gap-2">
                         <label id="labelEditCurrentPrice" for="editCurrentPrice" class="block text-xs font-bold text-[#007A63]">
                             Cours actuel / VL (€)
@@ -500,8 +524,26 @@
                             Cours actuel
                         </button>
                     </div>
-                    <input type="number" step="any" min="0" id="editCurrentPrice"
+                    <input type="number" step="any" min="0" id="editCurrentPrice" placeholder="VL ou cours unitaire"
                         class="w-full bg-white border border-teal-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 focus:outline-none focus:border-[#007A63]">
+
+                    <!-- Case de propagation automatique aux autres entrées du même support -->
+                    <label id="propagateSiblingWrapper" class="hidden flex items-start gap-2 pt-0.5 cursor-pointer select-none">
+                        <input type="checkbox" id="chkPropagateSiblingPrice" checked
+                            class="mt-0.5 w-4 h-4 rounded text-[#007A63] border-teal-300 focus:ring-[#007A63]">
+                        <span id="lblPropagateSiblingText" class="text-[11px] font-semibold text-[#007A63] leading-snug">
+                            Appliquer ce cours unitaire aux autres entrées de cette valeur
+                        </span>
+                    </label>
+
+                    <!-- Saisie directe du montant actualisé pour cette ligne précise -->
+                    <div id="editManualValueWrapper" class="pt-1 border-t border-teal-200/50">
+                        <label id="labelEditCurrentValue" for="editCurrentValue" class="block text-[11px] font-semibold text-gray-700 mb-1">
+                            Ou montant actualisé de cette ligne (€)
+                        </label>
+                        <input type="number" step="any" min="0" id="editCurrentValue" placeholder="Ex: 1545.00"
+                            class="w-full bg-white border border-teal-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 focus:outline-none focus:border-[#007A63]">
+                    </div>
 
                     <div id="detailPerformanceBox" class="pt-1 flex items-center justify-between text-xs">
                         <span class="text-gray-600">Valorisation : 0,00 €</span>
@@ -518,7 +560,7 @@
 
                     <button type="button" id="btnOpenCloseSection"
                         class="w-full py-2.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 font-bold text-xs hover:bg-amber-100 transition">
-                        Passer en Sortie (Figer la vente)
+                        Passer en Sortie (Clôturer)
                     </button>
 
                     <!-- Suppression avec confirmation inline -->
@@ -593,9 +635,41 @@
         </div>
     </div>
 
-    <!-- ==================== MODALE 3 : MENU BURGER (EXPORT / IMPORT / VIDER) ==================== -->
+    <!-- ==================== MODALE 3 : ACTUALISATION GROUPÉE PAR VALEUR ("COURS / VL") ==================== -->
+    <div id="modalBulkValues" class="fixed inset-0 z-40 hidden bg-black/45 backdrop-blur-[1px] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[92vh] flex flex-col">
+            <div class="flex items-center justify-between pb-3 border-b border-gray-100 shrink-0">
+                <div>
+                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#007A63]">Mise à jour groupée</span>
+                    <h3 class="text-base font-bold text-gray-900">Actualiser la valeur des supports</h3>
+                </div>
+                <button type="button" data-close-modal="modalBulkValues" class="p-1.5 rounded-full text-gray-400 hover:bg-gray-100">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <p class="text-xs text-gray-500 mt-2.5 shrink-0">
+                Saisissez le nouveau cours unitaire ou VL d'un support : toutes les entrées associées à cette valeur seront recalculées en un seul clic.
+            </p>
+
+            <div id="bulkValuesList" class="mt-3 space-y-2.5 overflow-y-auto flex-1 pr-0.5">
+                <!-- Groupes de supports injectés dynamiquement -->
+            </div>
+
+            <div class="pt-3 mt-3 border-t border-gray-100 shrink-0">
+                <button type="button" id="btnApplyBulkValues"
+                    class="w-full py-3 rounded-xl bg-[#007A63] hover:bg-[#006350] text-white font-bold text-sm shadow-sm active:scale-[0.99] transition">
+                    Appliquer aux positions
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODALE 4 : MENU BURGER (EXPORT / IMPORT / VIDER) ==================== -->
     <div id="modalMenuBackup" class="fixed inset-0 z-40 hidden bg-black/45 backdrop-blur-[1px] flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4">
+        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between pb-2 border-b border-gray-100">
                 <h3 class="text-base font-bold text-gray-900">Gestion des données</h3>
                 <button type="button" data-close-modal="modalMenuBackup" class="p-1.5 rounded-full text-gray-400 hover:bg-gray-100">
@@ -612,7 +686,7 @@
             <div class="space-y-2.5">
                 <button type="button" id="btnExportJson"
                     class="w-full flex items-center justify-between p-3.5 rounded-2xl bg-teal-50/70 border border-teal-200 text-[#007A63] font-bold text-sm hover:bg-teal-100/70 transition">
-                    <span>Export JSON</span>
+                    <span>Exporter JSON</span>
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                     </svg>
@@ -620,19 +694,39 @@
 
                 <button type="button" id="btnExportCsv"
                     class="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-[#E2E8E5] text-gray-800 font-semibold text-sm hover:bg-gray-100 transition">
-                    <span>Export CSV</span>
+                    <span>Exporter CSV</span>
                     <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                 </button>
 
                 <label class="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-[#E2E8E5] text-gray-800 font-semibold text-sm hover:bg-gray-100 transition cursor-pointer">
-                    <span>Import JSON</span>
+                    <span>Importer JSON (Fichier)</span>
                     <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                     </svg>
-                    <input type="file" id="inputImportJson" accept=".json" class="hidden">
+                    <input type="file" id="inputImportJson" accept=".json,application/json,text/plain,*/*" class="hidden">
                 </label>
+
+                <button type="button" id="btnTogglePasteJson"
+                    class="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-[#E2E8E5] text-gray-800 font-semibold text-sm hover:bg-gray-100 transition">
+                    <span>Importer par texte JSON (Coller)</span>
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                </button>
+
+                <div id="pasteJsonWrapper" class="hidden p-3 rounded-2xl bg-gray-50 border border-[#E2E8E5] space-y-2">
+                    <label for="textareaPasteJson" class="block text-[11px] font-semibold text-gray-600">
+                        Collez le contenu de votre sauvegarde JSON ci-dessous :
+                    </label>
+                    <textarea id="textareaPasteJson" rows="4" placeholder='[{"id":"pos-...","envelope":"Crypto",...}]'
+                        class="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs font-mono focus:outline-none focus:border-[#007A63]"></textarea>
+                    <button type="button" id="btnConfirmPasteJson"
+                        class="w-full py-2 rounded-xl bg-[#007A63] text-white font-bold text-xs hover:bg-[#006350] transition">
+                        Importer ce texte JSON
+                    </button>
+                </div>
             </div>
 
             <!-- Vider toutes les données avec confirmation inline -->
@@ -666,6 +760,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             // 1. CONSTANTES & CONFIGURATION
             const STORAGE_KEY = 'cvatp_portfolio_v3';
+            const LEGACY_KEYS = ['cvatp_portfolio_v2', 'cvatp_portfolio_v1'];
             const ENVELOPES = ['Toutes', 'Crypto', 'Linxea Spirit', 'Linxea Avenir', 'PEA', 'PER / PERCO'];
 
             const COINGECKO_IDS = {
@@ -686,6 +781,32 @@
                 'SUI': 'sui'
             };
 
+            // Dictionnaire local de secours pour les ISIN courants (ETF & Fonds PEA / Linxea / PER)
+            const KNOWN_ISIN_NAMES = {
+                'LU1681045370': 'AMUNDI MSCI EMERGING MARKETS',
+                'LU1681043599': 'AMUNDI MSCI WORLD UCITS ETF EUR',
+                'FR0011869353': 'AMUNDI PEA MSCI EMERGING MARKETS',
+                'FR0013412285': 'AMUNDI PEA S&P 500 UCITS ETF',
+                'FR0011550185': 'BNP PARIBAS EASY S&P 500 UCITS ETF',
+                'LU1829221024': 'AMUNDI NASDAQ-100 UCITS ETF',
+                'FR0011871110': 'AMUNDI PEA NASDAQ-100 UCITS ETF',
+                'IE00B4L5Y983': 'ISHARES CORE MSCI WORLD UCITS ETF',
+                'IE0002XZSHO1': 'ISHARES MSCI WORLD SWAP PEA UCITS ETF',
+                'FR0000120073': 'AIR LIQUIDE',
+                'FR0000120271': 'TOTALENERGIES',
+                'FR0000121014': 'LVMH',
+                'FR0000120578': 'SANOFI',
+                'FR0000121972': 'SCHNEIDER ELECTRIC',
+                'FR0010208488': 'ENGIE',
+                'FR0000131104': 'BNP PARIBAS',
+                'FR0000120628': 'AXA',
+                'FR0010149120': 'COMGEST MONDE C',
+                'LU0099574567': 'FIDELITY FUNDS - GLOBAL TECHNOLOGY',
+                'FR0007054358': 'AMUNDI EURO STOXX 50 UCITS ETF'
+            };
+
+            const isinNameCache = { ...KNOWN_ISIN_NAMES };
+
             // 2. ÉTAT GLOBAL
             let state = {
                 positions: [],
@@ -694,14 +815,25 @@
                 editingPositionId: null
             };
 
-            // 3. UTILITAIRES DE FORMATAGE & CALCUL ROBUSTE
+            // 3. UTILITAIRES DE FORMATAGE, CLÉ UNIQUE DE VALEUR & CALCULS
             function getCurrency(envelope) {
                 return envelope === 'Crypto' ? 'USDC' : '€';
             }
 
+            // Identifiant unique d'un support pour regrouper plusieurs entrées sur la même valeur
+            function getAssetGroupKey(pos) {
+                const currency = getCurrency(pos.envelope);
+                const cleanCode = (pos.code || '').trim().toUpperCase();
+                if (cleanCode) {
+                    return `${currency}::CODE::${cleanCode}`;
+                }
+                const cleanName = (pos.name || '').trim().toUpperCase();
+                return `${currency}::NAME::${cleanName}`;
+            }
+
             function formatMoney(amount, currency, withSign = false) {
                 const safeVal = Number.isFinite(amount) ? amount : 0;
-                const sign = (withSign && safeVal > 0) ? '+' : (withSign && safeVal === 0 ? '+' : '');
+                const sign = (withSign && safeVal >= 0) ? '+' : '';
                 return sign + safeVal.toLocaleString('fr-FR', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
@@ -732,13 +864,10 @@
                     .replace(/"/g, '&quot;');
             }
 
-            /**
-             * Logique de calcul robuste du capital investi, de la valorisation et du PnL :
-             * - Chaque position stocke explicitement `investedAmount`.
-             * - Si `buyPrice` et `currentPrice` > 0 : qty = investedAmount / buyPrice, currentValue = qty * currentPrice.
-             * - Sinon (ex: prix d'achat ou cours actuel non renseigné) : currentValue = investedAmount, pnl = 0, pnlPct = 0.
-             * - Pour une position clôturée ('closed') sans prix unitaire mais avec `closedAmount` : currentValue = closedAmount.
-             */
+            function isValidIsinFormat(code) {
+                return /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/.test((code || '').trim().toUpperCase());
+            }
+
             function computePositionMetrics(pos) {
                 const invested = Number(pos.investedAmount) > 0
                     ? Number(pos.investedAmount)
@@ -757,6 +886,8 @@
                     currentValue = pos.closedAmount;
                 } else if (buyPrice > 0 && currentPrice > 0 && qty > 0) {
                     currentValue = qty * currentPrice;
+                } else if (typeof pos.manualCurrentValue === 'number' && pos.manualCurrentValue >= 0) {
+                    currentValue = pos.manualCurrentValue;
                 }
 
                 const pnl = currentValue - invested;
@@ -779,7 +910,7 @@
                 }, 3000);
             }
 
-            // 4. STOCKAGE LOCAL (Base vierge par défaut sous cvatp_portfolio_v3)
+            // 4. STOCKAGE LOCAL (BASE VIERGE PAR DÉFAUT)
             function loadFromStorage() {
                 try {
                     const raw = localStorage.getItem(STORAGE_KEY);
@@ -788,6 +919,18 @@
                         if (Array.isArray(parsed)) {
                             state.positions = parsed;
                             return;
+                        }
+                    }
+                    // Migration douce si l'utilisateur avait déjà enregistré des lignes dans v2
+                    for (const oldKey of LEGACY_KEYS) {
+                        const oldRaw = localStorage.getItem(oldKey);
+                        if (oldRaw !== null) {
+                            const oldParsed = JSON.parse(oldRaw);
+                            if (Array.isArray(oldParsed) && oldParsed.length > 0) {
+                                state.positions = oldParsed;
+                                saveToStorage();
+                                return;
+                            }
                         }
                     }
                 } catch (e) {
@@ -805,7 +948,64 @@
                 }
             }
 
-            // 5. API FINANCIÈRES EN LIGNE (CoinGecko & Yahoo Finance proxy)
+            // 5. API FINANCIÈRES EN LIGNE (Cache local + OpenFIGI + Yahoo Finance + CoinGecko)
+            async function lookupInstrumentNameByIsin(rawIsin) {
+                const isin = (rawIsin || '').trim().toUpperCase();
+                if (!isin || isin.length < 6) return null;
+
+                if (isinNameCache[isin]) {
+                    return isinNameCache[isin];
+                }
+
+                // 1) OpenFIGI (supporte CORS nativement depuis GitHub Pages)
+                try {
+                    const figiResp = await fetch('https://api.openfigi.com/v3/mapping', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify([{ idType: 'ID_ISIN', idValue: isin }])
+                    });
+
+                    if (figiResp.ok) {
+                        const figiData = await figiResp.json();
+                        const records = figiData?.[0]?.data;
+                        if (Array.isArray(records) && records.length > 0) {
+                            const preferred = records.find(r => ['FP', 'GY', 'NA', 'IM', 'LN', 'SW'].includes(r.exchCode)) || records[0];
+                            const resolvedName = (preferred.name || preferred.securityDescription || preferred.ticker || '').trim().toUpperCase();
+                            if (resolvedName) {
+                                isinNameCache[isin] = resolvedName;
+                                return resolvedName;
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.warn('OpenFIGI indisponible:', err);
+                }
+
+                // 2) Secours via Yahoo Finance Search (proxy allorigins)
+                try {
+                    const searchUrl = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(isin)}&quotesCount=5&newsCount=0`;
+                    const proxySearch = `https://api.allorigins.win/get?url=${encodeURIComponent(searchUrl)}`;
+                    const sRes = await fetch(proxySearch);
+                    if (sRes.ok) {
+                        const wrapped = await sRes.json();
+                        const parsed = JSON.parse(wrapped.contents);
+                        const quotes = parsed?.quotes;
+                        if (Array.isArray(quotes) && quotes.length > 0) {
+                            const euQuote = quotes.find(q => q.symbol && (q.symbol.endsWith('.PA') || q.symbol.endsWith('.DE') || q.symbol.endsWith('.AS'))) || quotes[0];
+                            const resolvedName = (euQuote.longname || euQuote.shortname || euQuote.symbol || '').trim().toUpperCase();
+                            if (resolvedName) {
+                                isinNameCache[isin] = resolvedName;
+                                return resolvedName;
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Yahoo Finance Search indisponible:', err);
+                }
+
+                return null;
+            }
+
             async function fetchCryptoPriceUSDC(ticker, explicitCgId) {
                 const cleanTicker = (ticker || '').trim().toUpperCase();
                 const cgId = (explicitCgId || COINGECKO_IDS[cleanTicker] || cleanTicker.toLowerCase()).trim();
@@ -859,7 +1059,6 @@
 
             // 6. RENDU DU BANDEAU DE BILAN SUPÉRIEUR (EUR & USDC)
             function updateSummaryBoard(filteredPositions) {
-                // Adaptation visuelle des colonnes selon le filtre actif
                 const cardEur = document.getElementById('summaryCardEur');
                 const cardUsdc = document.getElementById('summaryCardUsdc');
                 const board = document.getElementById('summaryBoard');
@@ -881,7 +1080,7 @@
                     board.classList.add('grid-cols-2');
                 }
 
-                // Calcul des totaux EUR
+                // Totaux EUR
                 const eurOpen = filteredPositions.filter(p => p.envelope !== 'Crypto' && p.status === 'open');
                 const eurClosed = filteredPositions.filter(p => p.envelope !== 'Crypto' && p.status === 'closed');
 
@@ -908,7 +1107,7 @@
                 elEurClosed.textContent = formatMoney(eurClosedPnl, '€', true);
                 elEurClosed.className = `font-bold ${eurClosedPnl > 0 ? 'text-[#0D8A58]' : (eurClosedPnl < 0 ? 'text-[#D63638]' : 'text-gray-700')}`;
 
-                // Calcul des totaux USDC (Crypto)
+                // Totaux USDC (Crypto)
                 const usdcOpen = filteredPositions.filter(p => p.envelope === 'Crypto' && p.status === 'open');
                 const usdcClosed = filteredPositions.filter(p => p.envelope === 'Crypto' && p.status === 'closed');
 
@@ -1008,7 +1207,7 @@
                 }
 
                 items.forEach(pos => {
-                    const { invested, pnl, pnlPct } = computePositionMetrics(pos);
+                    const { invested, currentValue, pnl, pnlPct } = computePositionMetrics(pos);
                     const currency = getCurrency(pos.envelope);
                     const isPositive = pnlPct >= 0;
                     const perfColor = isPositive ? 'text-[#0D8A58]' : 'text-[#D63638]';
@@ -1020,6 +1219,10 @@
                     const badgeHtml = pos.code
                         ? `<span class="inline-block font-mono text-[10px] font-semibold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">${escapeHTML(pos.code)}</span>`
                         : '';
+
+                    const valSubline = Math.abs(currentValue - invested) > 0.005
+                        ? `Investi : ${formatMoney(invested, currency)} • Actuel : ${formatMoney(currentValue, currency)}`
+                        : `Investi : ${formatMoney(invested, currency)}`;
 
                     card.innerHTML = `
                         <div class="flex items-start justify-between gap-2">
@@ -1039,7 +1242,7 @@
                                     ${badgeHtml}
                                 </div>
                                 <div class="text-[11px] text-gray-400 font-medium mt-1">
-                                    Investi : ${formatMoney(invested, currency)}
+                                    ${valSubline}
                                 </div>
                             </div>
                             <div class="text-right shrink-0">
@@ -1058,16 +1261,23 @@
                 });
             }
 
-            // 8. MODALE D'AJOUT D'UNE ENTRÉE UNITAIRE
+            // 8. MODALE D'AJOUT D'UNE ENTRÉE UNITAIRE & AUTO-COMPLÉTION ISIN
             function openAddEntryModal() {
                 document.getElementById('formAddEntry').reset();
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('addEntryDate').value = today;
 
+                const statusAv = document.getElementById('statusAvIsinLookup');
+                const statusPea = document.getElementById('statusPeaIsinLookup');
+                statusAv.classList.add('hidden');
+                statusAv.textContent = '';
+                statusPea.classList.add('hidden');
+                statusPea.textContent = '';
+
                 if (state.activeEnvelope !== 'Toutes') {
                     document.getElementById('addEnvelope').value = state.activeEnvelope;
                 } else {
-                    document.getElementById('addEnvelope').value = 'Crypto';
+                    document.getElementById('addEnvelope').value = 'Linxea Spirit';
                 }
 
                 selectCryptoPreset('BTC', 'BITCOIN', 'bitcoin');
@@ -1094,6 +1304,44 @@
                 } else {
                     secAvPer.classList.remove('hidden');
                     recalcAddAvPreview();
+                }
+            }
+
+            async function triggerIsinAutocomplete(mode, forceLookup = false) {
+                const isPea = mode === 'PEA';
+                const isinInput = document.getElementById(isPea ? 'addPeaIsin' : 'addAvIsin');
+                const nameInput = document.getElementById(isPea ? 'addPeaName' : 'addAvName');
+                const statusEl = document.getElementById(isPea ? 'statusPeaIsinLookup' : 'statusAvIsinLookup');
+                const btnEl = document.getElementById(isPea ? 'btnLookupPeaIsin' : 'btnLookupAvIsin');
+
+                const isin = isinInput.value.trim().toUpperCase();
+                if (!isin) {
+                    statusEl.classList.add('hidden');
+                    return;
+                }
+
+                if (!forceLookup && !isValidIsinFormat(isin)) {
+                    return;
+                }
+
+                statusEl.textContent = 'Recherche en cours...';
+                statusEl.className = 'text-[11px] font-medium text-[#007A63] mt-1';
+                statusEl.classList.remove('hidden');
+                btnEl.disabled = true;
+                btnEl.textContent = '...';
+
+                const resolvedName = await lookupInstrumentNameByIsin(isin);
+
+                btnEl.disabled = false;
+                btnEl.textContent = 'Rechercher';
+
+                if (resolvedName) {
+                    nameInput.value = resolvedName;
+                    statusEl.textContent = `Support trouvé : ${resolvedName}`;
+                    statusEl.className = 'text-[11px] font-semibold text-[#0D8A58] mt-1';
+                } else {
+                    statusEl.textContent = 'ISIN non trouvé automatiquement, saisissez le nom manuellement';
+                    statusEl.className = 'text-[11px] font-medium text-amber-700 mt-1';
                 }
             }
 
@@ -1146,9 +1394,9 @@
             function recalcAddPeaPreview() {
                 const qty = parseFloat(document.getElementById('addPeaQty').value) || 0;
                 const price = parseFloat(document.getElementById('addPeaUnitPrice').value) || 0;
-                const total = qty * price;
-                document.getElementById('previewAddPeaTotal').textContent =
-                    `Montant investi calculé : ${formatMoney(total, '€')}`;
+                if (qty > 0 && price > 0) {
+                    document.getElementById('addPeaInvested').value = Number((qty * price).toFixed(2));
+                }
             }
 
             async function handleFetchAddCryptoPrice() {
@@ -1178,7 +1426,7 @@
                 }
             }
 
-            function handleSaveNewEntry(event) {
+            async function handleSaveNewEntry(event) {
                 event.preventDefault();
                 const envelope = document.getElementById('addEnvelope').value;
                 const entryDate = document.getElementById('addEntryDate').value;
@@ -1210,21 +1458,44 @@
                     }
                     qty = buyPrice > 0 ? investedAmount / buyPrice : 0;
                 } else if (envelope === 'PEA') {
-                    name = document.getElementById('addPeaName').value.trim().toUpperCase();
                     code = document.getElementById('addPeaIsin').value.trim().toUpperCase();
+                    name = document.getElementById('addPeaName').value.trim().toUpperCase();
                     qty = parseFloat(document.getElementById('addPeaQty').value) || 0;
                     buyPrice = parseFloat(document.getElementById('addPeaUnitPrice').value) || 0;
+                    const typedInvested = parseFloat(document.getElementById('addPeaInvested').value) || 0;
 
-                    if (!name || !code || qty <= 0 || buyPrice <= 0) {
-                        showToast('Veuillez remplir tous les champs PEA');
+                    if (!code) {
+                        showToast('Veuillez renseigner le code ISIN');
                         return;
                     }
-                    investedAmount = qty * buyPrice;
+
+                    if (!name) {
+                        showToast('Recherche du nom via ISIN...');
+                        const resolved = await lookupInstrumentNameByIsin(code);
+                        name = resolved || code;
+                        document.getElementById('addPeaName').value = name;
+                    }
+
+                    investedAmount = (qty > 0 && buyPrice > 0) ? (qty * buyPrice) : typedInvested;
+                    if (investedAmount <= 0) {
+                        showToast('Veuillez remplir le montant investi ou la quantité + prix unitaire');
+                        return;
+                    }
+                    if (buyPrice > 0 && qty <= 0) {
+                        qty = investedAmount / buyPrice;
+                    }
                 } else {
-                    name = document.getElementById('addAvName').value.trim().toUpperCase();
                     code = document.getElementById('addAvIsin').value.trim().toUpperCase();
+                    name = document.getElementById('addAvName').value.trim().toUpperCase();
                     investedAmount = parseFloat(document.getElementById('addAvInvested').value) || 0;
                     buyPrice = parseFloat(document.getElementById('addAvVl').value) || 0;
+
+                    if (!name && code) {
+                        showToast('Recherche du nom via ISIN...');
+                        const resolved = await lookupInstrumentNameByIsin(code);
+                        name = resolved || code;
+                        document.getElementById('addAvName').value = name;
+                    }
 
                     if (!name || investedAmount <= 0) {
                         showToast('Veuillez saisir le nom du support et le montant investi (€)');
@@ -1232,6 +1503,17 @@
                     }
                     qty = buyPrice > 0 ? investedAmount / buyPrice : 0;
                 }
+
+                // Vérifier s'il existe déjà un cours actuel connu sur une entrée ouverte du même support
+                const tempPos = { envelope, name, code };
+                const groupKey = getAssetGroupKey(tempPos);
+                const existingSibling = state.positions.find(p =>
+                    p.status === 'open' && getAssetGroupKey(p) === groupKey && Number(p.currentPrice) > 0
+                );
+
+                const initialCurrentPrice = existingSibling
+                    ? Number(existingSibling.currentPrice)
+                    : buyPrice;
 
                 const newPosition = {
                     id: 'pos-' + Date.now(),
@@ -1245,7 +1527,7 @@
                     investedAmount,
                     qty,
                     buyPrice,
-                    currentPrice: buyPrice
+                    currentPrice: initialCurrentPrice
                 };
 
                 state.positions.unshift(newPosition);
@@ -1255,7 +1537,7 @@
                 showToast('Entrée enregistrée');
             }
 
-            // 9. MODALE DÉTAIL / ÉDITION / CLÔTURE / SUPPRESSION
+            // 9. MODALE DÉTAIL / ÉDITION / PROPAGATION / CLÔTURE / SUPPRESSION
             function openDetailModal(posId) {
                 const pos = state.positions.find(p => p.id === posId);
                 if (!pos) return;
@@ -1288,7 +1570,29 @@
                     : `Cours actuel / VL (${currency})`;
                 document.getElementById('editCurrentPrice').value = pos.currentPrice || '';
 
-                // Réinitialisation des sous-panneaux
+                document.getElementById('labelEditCurrentValue').textContent =
+                    `Ou montant actualisé de cette ligne (${currency})`;
+                document.getElementById('editCurrentValue').value = Number(metrics.currentValue.toFixed(2));
+
+                // Vérifier s'il existe d'autres entrées ouvertes sur la même valeur
+                const groupKey = getAssetGroupKey(pos);
+                const siblings = state.positions.filter(p =>
+                    p.id !== pos.id && p.status === 'open' && getAssetGroupKey(p) === groupKey
+                );
+
+                const propWrapper = document.getElementById('propagateSiblingWrapper');
+                const propLabel = document.getElementById('lblPropagateSiblingText');
+                const propCheckbox = document.getElementById('chkPropagateSiblingPrice');
+
+                if (!isClosed && siblings.length > 0) {
+                    propWrapper.classList.remove('hidden');
+                    propCheckbox.checked = true;
+                    propLabel.textContent = `Appliquer ce cours unitaire aux ${siblings.length} autre${siblings.length > 1 ? 's' : ''} entrée${siblings.length > 1 ? 's' : ''} de cette valeur`;
+                } else {
+                    propWrapper.classList.add('hidden');
+                    propCheckbox.checked = false;
+                }
+
                 document.getElementById('closePositionPanel').classList.add('hidden');
                 document.getElementById('deleteConfirmBox').classList.add('hidden');
                 document.getElementById('btnRequestDeletePosition').classList.remove('hidden');
@@ -1296,20 +1600,49 @@
                 const exitWrapper = document.getElementById('editExitDateWrapper');
                 const btnOpenClose = document.getElementById('btnOpenCloseSection');
                 const btnFetchOnline = document.getElementById('btnFetchOnlineSingle');
+                const manualValueWrapper = document.getElementById('editManualValueWrapper');
 
                 if (isClosed) {
                     exitWrapper.classList.remove('hidden');
                     document.getElementById('editExitDate').value = pos.exitDate || '';
                     btnOpenClose.classList.add('hidden');
                     btnFetchOnline.classList.add('hidden');
+                    manualValueWrapper.classList.add('hidden');
                 } else {
                     exitWrapper.classList.add('hidden');
                     btnOpenClose.classList.remove('hidden');
                     btnFetchOnline.classList.remove('hidden');
+                    manualValueWrapper.classList.remove('hidden');
                 }
 
                 updateDetailPerformanceBox();
                 document.getElementById('modalDetailPosition').classList.remove('hidden');
+            }
+
+            function syncDetailFromUnitPrice() {
+                const invested = parseFloat(document.getElementById('editInvestedAmount').value) || 0;
+                const buyPrice = parseFloat(document.getElementById('editBuyPrice').value) || 0;
+                const currentPrice = parseFloat(document.getElementById('editCurrentPrice').value) || 0;
+
+                if (buyPrice > 0 && currentPrice > 0 && invested > 0) {
+                    const qty = invested / buyPrice;
+                    document.getElementById('editCurrentValue').value = Number((qty * currentPrice).toFixed(2));
+                }
+                updateDetailPerformanceBox();
+            }
+
+            function syncDetailFromManualValue() {
+                const invested = parseFloat(document.getElementById('editInvestedAmount').value) || 0;
+                const buyPrice = parseFloat(document.getElementById('editBuyPrice').value) || 0;
+                const currentVal = parseFloat(document.getElementById('editCurrentValue').value) || 0;
+
+                if (buyPrice > 0 && invested > 0 && currentVal >= 0) {
+                    const qty = invested / buyPrice;
+                    if (qty > 0) {
+                        document.getElementById('editCurrentPrice').value = Number((currentVal / qty).toFixed(6));
+                    }
+                }
+                updateDetailPerformanceBox();
             }
 
             function updateDetailPerformanceBox() {
@@ -1320,12 +1653,14 @@
                 const invested = parseFloat(document.getElementById('editInvestedAmount').value) || 0;
                 const buyPrice = parseFloat(document.getElementById('editBuyPrice').value) || 0;
                 const currentPrice = parseFloat(document.getElementById('editCurrentPrice').value) || 0;
+                const manualValInput = parseFloat(document.getElementById('editCurrentValue').value);
 
                 const tempPos = {
                     ...pos,
                     investedAmount: invested,
                     buyPrice,
-                    currentPrice
+                    currentPrice,
+                    manualCurrentValue: !isNaN(manualValInput) ? manualValInput : pos.manualCurrentValue
                 };
                 const { currentValue, pnl, pnlPct } = computePositionMetrics(tempPos);
 
@@ -1354,12 +1689,11 @@
                 if (price !== null && price > 0) {
                     const formatted = Number(price.toFixed(6));
                     document.getElementById('editCurrentPrice').value = formatted;
-                    // Si le prix d'achat n'avait pas encore été renseigné, on l'initialise à ce cours
                     const currentBuy = parseFloat(document.getElementById('editBuyPrice').value) || 0;
                     if (currentBuy <= 0) {
                         document.getElementById('editBuyPrice').value = formatted;
                     }
-                    updateDetailPerformanceBox();
+                    syncDetailFromUnitPrice();
                     showToast(`Cours mis à jour : ${price.toLocaleString('fr-FR')} ${currency}`);
                 } else {
                     showToast('Cotation automatique indisponible (saisissez la VL manuellement)');
@@ -1375,6 +1709,7 @@
                 const invested = parseFloat(document.getElementById('editInvestedAmount').value) || 0;
                 const buyPrice = parseFloat(document.getElementById('editBuyPrice').value) || 0;
                 const currentPrice = parseFloat(document.getElementById('editCurrentPrice').value) || 0;
+                const manualVal = parseFloat(document.getElementById('editCurrentValue').value);
 
                 if (invested <= 0) {
                     showToast('Le montant investi doit être supérieur à 0');
@@ -1389,17 +1724,47 @@
                 pos.currentPrice = currentPrice;
                 pos.qty = buyPrice > 0 ? invested / buyPrice : 0;
 
+                if (buyPrice <= 0 && !isNaN(manualVal) && manualVal >= 0) {
+                    pos.manualCurrentValue = manualVal;
+                } else {
+                    delete pos.manualCurrentValue;
+                }
+
                 if (pos.status === 'closed') {
                     pos.exitDate = document.getElementById('editExitDate').value;
+                }
+
+                // Propagation aux autres entrées ouvertes partageant cette même valeur si cochée
+                let propagatedCount = 0;
+                const shouldPropagate = document.getElementById('chkPropagateSiblingPrice').checked;
+                if (pos.status === 'open' && shouldPropagate && currentPrice > 0) {
+                    const groupKey = getAssetGroupKey(pos);
+                    state.positions.forEach(other => {
+                        if (other.id !== pos.id && other.status === 'open' && getAssetGroupKey(other) === groupKey) {
+                            other.currentPrice = currentPrice;
+                            if (!other.buyPrice || other.buyPrice <= 0) {
+                                other.buyPrice = currentPrice;
+                                other.qty = other.investedAmount > 0 ? other.investedAmount / currentPrice : 0;
+                            } else {
+                                other.qty = other.investedAmount > 0 ? other.investedAmount / other.buyPrice : other.qty;
+                            }
+                            delete other.manualCurrentValue;
+                            propagatedCount++;
+                        }
+                    });
                 }
 
                 saveToStorage();
                 document.getElementById('modalDetailPosition').classList.add('hidden');
                 renderDashboard();
-                showToast('Modifications enregistrées');
+
+                if (propagatedCount > 0) {
+                    showToast(`Enregistré (cours appliqué à ${propagatedCount + 1} entrées)`);
+                } else {
+                    showToast('Modifications enregistrées');
+                }
             }
 
-            // Suppression unitaire avec confirmation inline
             function handleConfirmDeletePosition() {
                 if (!state.editingPositionId) return;
                 state.positions = state.positions.filter(p => p.id !== state.editingPositionId);
@@ -1419,6 +1784,7 @@
                 const invested = parseFloat(document.getElementById('editInvestedAmount').value) || pos.investedAmount;
                 const buyPrice = parseFloat(document.getElementById('editBuyPrice').value) || pos.buyPrice || 0;
                 const currentUnit = parseFloat(document.getElementById('editCurrentPrice').value) || pos.currentPrice || buyPrice;
+                const manualVal = parseFloat(document.getElementById('editCurrentValue').value);
                 const qty = buyPrice > 0 ? invested / buyPrice : 0;
 
                 document.getElementById('closeDateInput').value = today;
@@ -1426,7 +1792,9 @@
                 document.getElementById('labelCloseTotalAmount').textContent = `Ou montant total récupéré (${currency}) *`;
 
                 document.getElementById('closeUnitPriceInput').value = currentUnit > 0 ? currentUnit : '';
-                const defaultTotal = (qty > 0 && currentUnit > 0) ? (qty * currentUnit) : invested;
+                const defaultTotal = (qty > 0 && currentUnit > 0)
+                    ? (qty * currentUnit)
+                    : (!isNaN(manualVal) && manualVal > 0 ? manualVal : invested);
                 document.getElementById('closeTotalAmountInput').value = Number(defaultTotal.toFixed(2));
 
                 updateClosePreviewBanner();
@@ -1524,6 +1892,7 @@
                 pos.exitDate = exitDate;
                 pos.closedAmount = totalRecovered;
                 pos.currentPrice = exitUnitPrice > 0 ? exitUnitPrice : (qty > 0 ? totalRecovered / qty : 0);
+                delete pos.manualCurrentValue;
 
                 saveToStorage();
                 document.getElementById('modalDetailPosition').classList.add('hidden');
@@ -1531,7 +1900,148 @@
                 showToast('Position clôturée et figée dans Sorties');
             }
 
-            // 10. ACTUALISATION EN LOT DES COURS
+            // 10. MODALE DE MISE À JOUR GROUPÉE PAR VALEUR ("COURS / VL")
+            function openBulkValuesModal() {
+                const openItems = state.positions.filter(p => p.status === 'open');
+                const container = document.getElementById('bulkValuesList');
+                container.innerHTML = '';
+
+                if (openItems.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-8 px-4 rounded-2xl border border-dashed border-gray-200 text-xs text-gray-400">
+                            Aucune entrée ouverte à actualiser. Ajoutez d'abord une position.
+                        </div>
+                    `;
+                    document.getElementById('btnApplyBulkValues').classList.add('hidden');
+                    document.getElementById('modalBulkValues').classList.remove('hidden');
+                    return;
+                }
+
+                document.getElementById('btnApplyBulkValues').classList.remove('hidden');
+
+                // Regroupement par identifiant unique de valeur (ISIN / Ticker / Nom+Devise)
+                const groupsMap = new Map();
+                openItems.forEach(pos => {
+                    const key = getAssetGroupKey(pos);
+                    const metrics = computePositionMetrics(pos);
+                    if (!groupsMap.has(key)) {
+                        groupsMap.set(key, {
+                            key,
+                            name: pos.name,
+                            code: pos.code || '',
+                            currency: getCurrency(pos.envelope),
+                            envelopes: new Set([pos.envelope]),
+                            count: 0,
+                            totalParts: 0,
+                            totalInvested: 0,
+                            latestPrice: Number(pos.currentPrice) || Number(pos.buyPrice) || 0,
+                            hasMissingBuyPrice: false
+                        });
+                    }
+                    const grp = groupsMap.get(key);
+                    grp.envelopes.add(pos.envelope);
+                    grp.count += 1;
+                    grp.totalParts += metrics.qty;
+                    grp.totalInvested += metrics.invested;
+                    if (Number(pos.currentPrice) > 0) {
+                        grp.latestPrice = Number(pos.currentPrice);
+                    }
+                    if (!pos.buyPrice || Number(pos.buyPrice) <= 0) {
+                        grp.hasMissingBuyPrice = true;
+                    }
+                });
+
+                groupsMap.forEach(grp => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-gray-50 rounded-2xl p-3.5 border border-[#E2E8E5] space-y-2';
+
+                    const badgeHtml = grp.code
+                        ? `<span class="inline-block font-mono text-[10px] font-semibold bg-white border border-gray-200 text-gray-600 px-1.5 py-0.5 rounded">${escapeHTML(grp.code)}</span>`
+                        : '';
+
+                    const partsInfo = grp.totalParts > 0
+                        ? ` • ${grp.totalParts.toLocaleString('fr-FR', { maximumFractionDigits: 4 })} parts/unités`
+                        : ` • Investi : ${formatMoney(grp.totalInvested, grp.currency)}`;
+
+                    const envelopesLabel = Array.from(grp.envelopes).join(', ');
+
+                    card.innerHTML = `
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="text-xs font-extrabold text-gray-900 uppercase truncate">${escapeHTML(grp.name)}</span>
+                                    ${badgeHtml}
+                                </div>
+                                <p class="text-[11px] font-medium text-[#007A63] mt-0.5">
+                                    ${grp.count} entrée${grp.count > 1 ? 's' : ''}${partsInfo}
+                                </p>
+                                <p class="text-[10px] text-gray-400">${escapeHTML(envelopesLabel)}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-1">
+                            <label class="text-[11px] font-semibold text-gray-600 shrink-0">
+                                Cours / VL (${grp.currency}) :
+                            </label>
+                            <input type="number" step="any" min="0"
+                                data-group-key="${escapeHTML(grp.key)}"
+                                value="${grp.latestPrice > 0 ? grp.latestPrice : ''}"
+                                placeholder="Saisir cours / VL"
+                                class="bulk-price-input flex-1 bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-sm font-bold text-gray-900 text-right focus:outline-none focus:border-[#007A63]">
+                        </div>
+                    `;
+
+                    container.appendChild(card);
+                });
+
+                document.getElementById('modalBulkValues').classList.remove('hidden');
+            }
+
+            function handleApplyBulkValues() {
+                const inputs = document.querySelectorAll('.bulk-price-input');
+                const priceByGroup = new Map();
+
+                inputs.forEach(inp => {
+                    const key = inp.getAttribute('data-group-key');
+                    const val = parseFloat(inp.value);
+                    if (key && !isNaN(val) && val > 0) {
+                        priceByGroup.set(key, val);
+                    }
+                });
+
+                if (priceByGroup.size === 0) {
+                    showToast('Aucune valeur unitaire renseignée');
+                    return;
+                }
+
+                let updatedPositionsCount = 0;
+                state.positions.forEach(pos => {
+                    if (pos.status !== 'open') return;
+                    const key = getAssetGroupKey(pos);
+                    if (priceByGroup.has(key)) {
+                        const newUnitPrice = priceByGroup.get(key);
+                        pos.currentPrice = newUnitPrice;
+                        if (!pos.buyPrice || Number(pos.buyPrice) <= 0) {
+                            pos.buyPrice = newUnitPrice;
+                            pos.qty = pos.investedAmount > 0 ? pos.investedAmount / newUnitPrice : 0;
+                        } else {
+                            pos.qty = pos.investedAmount > 0 ? pos.investedAmount / pos.buyPrice : pos.qty;
+                        }
+                        delete pos.manualCurrentValue;
+                        updatedPositionsCount++;
+                    }
+                });
+
+                const nowStr = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                document.getElementById('statusTimestamp').textContent = `Dernière actualisation manuelle : ${nowStr}`;
+
+                saveToStorage();
+                document.getElementById('modalBulkValues').classList.add('hidden');
+                renderDashboard();
+                showToast(`${updatedPositionsCount} entrée(s) mise(s) à jour`);
+            }
+
+            // 11. ACTUALISATION AUTOMATIQUE EN LOT DES COURS EN LIGNE
             async function handleBatchRefresh() {
                 const openItems = state.positions.filter(p => p.status === 'open');
                 if (openItems.length === 0) {
@@ -1543,23 +2053,33 @@
                 icon.classList.add('spin-refresh');
                 showToast('Actualisation des cours en cours...');
 
+                // Cache par valeur unique pour éviter de requêter plusieurs fois le même ISIN/Ticker
+                const fetchedPriceCache = new Map();
                 let updatedCount = 0;
+
                 for (const pos of openItems) {
+                    const key = getAssetGroupKey(pos);
                     let newPrice = null;
-                    if (pos.envelope === 'Crypto') {
-                        newPrice = await fetchCryptoPriceUSDC(pos.code || pos.name, pos.cgId);
-                    } else if (pos.code) {
-                        newPrice = await fetchIsinPriceEUR(pos.code);
+
+                    if (fetchedPriceCache.has(key)) {
+                        newPrice = fetchedPriceCache.get(key);
+                    } else {
+                        if (pos.envelope === 'Crypto') {
+                            newPrice = await fetchCryptoPriceUSDC(pos.code || pos.name, pos.cgId);
+                        } else if (pos.code) {
+                            newPrice = await fetchIsinPriceEUR(pos.code);
+                        }
+                        fetchedPriceCache.set(key, newPrice);
                     }
 
                     if (newPrice !== null && newPrice > 0) {
                         const formatted = Number(newPrice.toFixed(6));
                         pos.currentPrice = formatted;
-                        // Si la ligne avait été créée sans prix unitaire d'achat, on l'aligne pour permettre le suivi futur
                         if (!pos.buyPrice || pos.buyPrice <= 0) {
                             pos.buyPrice = formatted;
                             pos.qty = pos.investedAmount > 0 ? pos.investedAmount / formatted : 0;
                         }
+                        delete pos.manualCurrentValue;
                         updatedCount++;
                     }
                 }
@@ -1574,11 +2094,11 @@
                 if (updatedCount > 0) {
                     showToast(`${updatedCount} position(s) actualisée(s)`);
                 } else {
-                    showToast('Aucune cotation en ligne trouvée (saisie manuelle possible)');
+                    showToast('Aucune cotation auto trouvée — utilisez "Cours / VL"');
                 }
             }
 
-            // 11. MENU BURGER : EXPORT JSON / EXPORT CSV / IMPORT JSON / VIDER TOUTES LES DONNÉES
+            // 12. MENU BURGER : EXPORT JSON / EXPORT CSV / IMPORT JSON / VIDER
             function downloadFile(content, filename, mimeType) {
                 const blob = new Blob([content], { type: mimeType });
                 const url = URL.createObjectURL(blob);
@@ -1637,6 +2157,18 @@
                 showToast('Export CSV généré');
             }
 
+            function applyImportedJsonText(rawText) {
+                const imported = JSON.parse(rawText);
+                const list = Array.isArray(imported) ? imported : imported.positions;
+                if (!Array.isArray(list)) throw new Error('Format JSON invalide');
+
+                state.positions = list;
+                saveToStorage();
+                document.getElementById('modalMenuBackup').classList.add('hidden');
+                renderDashboard();
+                showToast(`${list.length} ligne(s) importée(s)`);
+            }
+
             function handleImportJson(event) {
                 const file = event.target.files[0];
                 if (!file) return;
@@ -1644,21 +2176,28 @@
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
-                        const imported = JSON.parse(e.target.result);
-                        const list = Array.isArray(imported) ? imported : imported.positions;
-                        if (!Array.isArray(list)) throw new Error('Format JSON invalide');
-
-                        state.positions = list;
-                        saveToStorage();
-                        document.getElementById('modalMenuBackup').classList.add('hidden');
-                        renderDashboard();
-                        showToast(`${list.length} ligne(s) importée(s)`);
+                        applyImportedJsonText(e.target.result);
                     } catch (err) {
                         showToast('Fichier JSON invalide');
                     }
                 };
                 reader.readAsText(file);
                 event.target.value = '';
+            }
+
+            function handleConfirmPasteJson() {
+                const rawText = document.getElementById('textareaPasteJson').value.trim();
+                if (!rawText) {
+                    showToast('Collez d\'abord le contenu JSON');
+                    return;
+                }
+                try {
+                    applyImportedJsonText(rawText);
+                    document.getElementById('textareaPasteJson').value = '';
+                    document.getElementById('pasteJsonWrapper').classList.add('hidden');
+                } catch (err) {
+                    showToast('Texte JSON invalide');
+                }
             }
 
             function handleConfirmClearAll() {
@@ -1671,14 +2210,18 @@
                 showToast('Toutes les données ont été vidées');
             }
 
-            // 12. ATTACHEMENT DES ÉVÉNEMENTS (100% addEventListener)
+            // 13. ATTACHEMENT DES ÉVÉNEMENTS
             function bindEvents() {
                 document.getElementById('fabAddEntry').addEventListener('click', openAddEntryModal);
                 document.getElementById('btnHeaderAddEntry').addEventListener('click', openAddEntryModal);
 
+                document.getElementById('btnOpenBulkValues').addEventListener('click', openBulkValuesModal);
+                document.getElementById('btnApplyBulkValues').addEventListener('click', handleApplyBulkValues);
+
                 document.getElementById('btnOpenMenu').addEventListener('click', () => {
                     document.getElementById('clearAllConfirmBox').classList.add('hidden');
                     document.getElementById('btnRequestClearAll').classList.remove('hidden');
+                    document.getElementById('pasteJsonWrapper').classList.add('hidden');
                     document.getElementById('modalMenuBackup').classList.remove('hidden');
                 });
 
@@ -1708,6 +2251,34 @@
                 document.getElementById('addCryptoUnitPrice').addEventListener('input', recalcAddCryptoPreview);
                 document.getElementById('btnFetchAddCryptoPrice').addEventListener('click', handleFetchAddCryptoPrice);
 
+                // Auto-complétion ISIN (Assurance-Vie / PER / PERCO)
+                const inputAvIsin = document.getElementById('addAvIsin');
+                inputAvIsin.addEventListener('input', () => {
+                    if (isValidIsinFormat(inputAvIsin.value)) {
+                        triggerIsinAutocomplete('AV', false);
+                    }
+                });
+                inputAvIsin.addEventListener('blur', () => {
+                    if (inputAvIsin.value.trim().length >= 6 && !document.getElementById('addAvName').value.trim()) {
+                        triggerIsinAutocomplete('AV', true);
+                    }
+                });
+                document.getElementById('btnLookupAvIsin').addEventListener('click', () => triggerIsinAutocomplete('AV', true));
+
+                // Auto-complétion ISIN (PEA)
+                const inputPeaIsin = document.getElementById('addPeaIsin');
+                inputPeaIsin.addEventListener('input', () => {
+                    if (isValidIsinFormat(inputPeaIsin.value)) {
+                        triggerIsinAutocomplete('PEA', false);
+                    }
+                });
+                inputPeaIsin.addEventListener('blur', () => {
+                    if (inputPeaIsin.value.trim().length >= 6 && !document.getElementById('addPeaName').value.trim()) {
+                        triggerIsinAutocomplete('PEA', true);
+                    }
+                });
+                document.getElementById('btnLookupPeaIsin').addEventListener('click', () => triggerIsinAutocomplete('PEA', true));
+
                 document.getElementById('addAvInvested').addEventListener('input', recalcAddAvPreview);
                 document.getElementById('addAvVl').addEventListener('input', recalcAddAvPreview);
 
@@ -1716,10 +2287,12 @@
 
                 document.getElementById('formAddEntry').addEventListener('submit', handleSaveNewEntry);
 
-                // Modale Détail / Édition / Clôture / Suppression unitaire
-                document.getElementById('editInvestedAmount').addEventListener('input', updateDetailPerformanceBox);
-                document.getElementById('editBuyPrice').addEventListener('input', updateDetailPerformanceBox);
-                document.getElementById('editCurrentPrice').addEventListener('input', updateDetailPerformanceBox);
+                // Modale Détail / Édition / Propagation / Clôture / Suppression unitaire
+                document.getElementById('editInvestedAmount').addEventListener('input', syncDetailFromUnitPrice);
+                document.getElementById('editBuyPrice').addEventListener('input', syncDetailFromUnitPrice);
+                document.getElementById('editCurrentPrice').addEventListener('input', syncDetailFromUnitPrice);
+                document.getElementById('editCurrentValue').addEventListener('input', syncDetailFromManualValue);
+
                 document.getElementById('btnFetchOnlineSingle').addEventListener('click', handleFetchOnlineSingle);
                 document.getElementById('formEditPosition').addEventListener('submit', handleSaveEditedPosition);
 
@@ -1747,6 +2320,10 @@
                 document.getElementById('btnExportJson').addEventListener('click', handleExportJson);
                 document.getElementById('btnExportCsv').addEventListener('click', handleExportCsv);
                 document.getElementById('inputImportJson').addEventListener('change', handleImportJson);
+                document.getElementById('btnTogglePasteJson').addEventListener('click', () => {
+                    document.getElementById('pasteJsonWrapper').classList.toggle('hidden');
+                });
+                document.getElementById('btnConfirmPasteJson').addEventListener('click', handleConfirmPasteJson);
 
                 document.getElementById('btnRequestClearAll').addEventListener('click', () => {
                     document.getElementById('btnRequestClearAll').classList.add('hidden');
@@ -1759,7 +2336,7 @@
                 document.getElementById('btnConfirmClearAll').addEventListener('click', handleConfirmClearAll);
             }
 
-            // 13. INITIALISATION
+            // 14. INITIALISATION
             loadFromStorage();
             bindEvents();
             renderFilterPills();
