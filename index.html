@@ -785,6 +785,8 @@
             const KNOWN_ISIN_NAMES = {
                 'LU1681045370': 'AMUNDI MSCI EMERGING MARKETS',
                 'LU1681043599': 'AMUNDI MSCI WORLD UCITS ETF EUR',
+                'LU1834983477': 'AMUNDI STOXX EUROPE 600 BANKS',
+                'LU1900066207': 'AMUNDI MSCI BRAZIL UCITS ETF',
                 'FR0011869353': 'AMUNDI PEA MSCI EMERGING MARKETS',
                 'FR0013412285': 'AMUNDI PEA S&P 500 UCITS ETF',
                 'FR0011550185': 'BNP PARIBAS EASY S&P 500 UCITS ETF',
@@ -837,6 +839,17 @@
                 return sign + safeVal.toLocaleString('fr-FR', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
+                }) + ' ' + currency;
+            }
+
+            // Formatage intelligent des cours / VL unitaires (jusqu'à 4 décimales si < 1, sinon 2)
+            function formatUnitPrice(price, currency) {
+                const safeVal = Number(price);
+                if (!Number.isFinite(safeVal) || safeVal <= 0) return '—';
+                const maxDecimals = safeVal < 1 ? 4 : 2;
+                return safeVal.toLocaleString('fr-FR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: maxDecimals
                 }) + ' ' + currency;
             }
 
@@ -1220,9 +1233,54 @@
                         ? `<span class="inline-block font-mono text-[10px] font-semibold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">${escapeHTML(pos.code)}</span>`
                         : '';
 
-                    const valSubline = Math.abs(currentValue - invested) > 0.005
-                        ? `Investi : ${formatMoney(invested, currency)} • Actuel : ${formatMoney(currentValue, currency)}`
-                        : `Investi : ${formatMoney(invested, currency)}`;
+                    // Calcul ou déduction du prix unitaire / VL d'achat
+                    const rawBuyPrice = Number(pos.buyPrice) || 0;
+                    const rawQty = Number(pos.qty) || 0;
+                    const effectiveBuyPrice = rawBuyPrice > 0
+                        ? rawBuyPrice
+                        : (invested > 0 && rawQty > 0 ? invested / rawQty : 0);
+
+                    // Calcul ou déduction du prix unitaire / VL actuel (ou de sortie)
+                    const rawCurrentPrice = Number(pos.currentPrice) || 0;
+                    const effectiveQty = effectiveBuyPrice > 0 && invested > 0
+                        ? invested / effectiveBuyPrice
+                        : rawQty;
+                    const effectiveCurrentPrice = rawCurrentPrice > 0
+                        ? rawCurrentPrice
+                        : (currentValue > 0 && effectiveQty > 0 ? currentValue / effectiveQty : 0);
+
+                    const isFundEnvelope = ['Linxea Spirit', 'Linxea Avenir', 'PER / PERCO'].includes(pos.envelope);
+                    const buyPricePrefix = effectiveBuyPrice > 0
+                        ? (isFundEnvelope ? 'VL achat' : 'Cours achat')
+                        : 'VL/Cours achat';
+                    const buyPriceFormatted = formatUnitPrice(effectiveBuyPrice, currency);
+
+                    const currentPricePrefix = pos.status === 'closed'
+                        ? (isFundEnvelope ? 'VL sortie' : 'Cours sortie')
+                        : (isFundEnvelope ? 'VL actuelle' : 'Cours actuel');
+                    const currentPriceFormatted = formatUnitPrice(effectiveCurrentPrice, currency);
+
+                    // Couleur distincte pour le badge de valeur unitaire actuelle / de sortie
+                    let currentBadgeStyle = 'bg-indigo-50 text-indigo-700 border-indigo-200';
+                    if (effectiveBuyPrice > 0 && effectiveCurrentPrice > 0) {
+                        if (effectiveCurrentPrice > effectiveBuyPrice + 1e-9) {
+                            currentBadgeStyle = 'bg-emerald-50 text-[#0D8A58] border-emerald-200';
+                        } else if (effectiveCurrentPrice < effectiveBuyPrice - 1e-9) {
+                            currentBadgeStyle = 'bg-red-50 text-[#D63638] border-red-200';
+                        } else {
+                            currentBadgeStyle = 'bg-amber-50 text-amber-800 border-amber-200';
+                        }
+                    }
+
+                    const buyPriceBadgeHtml = `<span class="inline-block text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 px-1.5 py-0.5 rounded">${buyPricePrefix} : ${buyPriceFormatted}</span>`;
+                    const currentPriceBadgeHtml = `<span class="inline-block text-[10px] font-bold ${currentBadgeStyle} border px-1.5 py-0.5 rounded">${currentPricePrefix} : ${currentPriceFormatted}</span>`;
+
+                    let valSubline = `Investi : ${formatMoney(invested, currency)}`;
+                    if (pos.status === 'closed') {
+                        valSubline = `Investi : ${formatMoney(invested, currency)} • Sortie : ${formatMoney(currentValue, currency)}`;
+                    } else if (Math.abs(currentValue - invested) > 0.005) {
+                        valSubline = `Investi : ${formatMoney(invested, currency)} • Actuel : ${formatMoney(currentValue, currency)}`;
+                    }
 
                     card.innerHTML = `
                         <div class="flex items-start justify-between gap-2">
@@ -1235,11 +1293,13 @@
                         </div>
                         <div class="flex items-end justify-between gap-3 mt-1.5">
                             <div class="min-w-0 flex-1">
-                                <div class="flex items-center gap-1.5 flex-wrap">
-                                    <span class="text-xs font-semibold text-gray-800 uppercase tracking-wide truncate">
-                                        ${escapeHTML(pos.name)}
-                                    </span>
+                                <div class="text-xs font-semibold text-gray-800 uppercase tracking-wide truncate">
+                                    ${escapeHTML(pos.name)}
+                                </div>
+                                <div class="flex items-center gap-1.5 flex-wrap mt-1">
                                     ${badgeHtml}
+                                    ${buyPriceBadgeHtml}
+                                    ${currentPriceBadgeHtml}
                                 </div>
                                 <div class="text-[11px] text-gray-400 font-medium mt-1">
                                     ${valSubline}
