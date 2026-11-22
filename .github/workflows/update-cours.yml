@@ -1,0 +1,37 @@
+name: Sync cours.csv depuis Google Sheets
+
+on:
+  schedule:
+    # Tous les jours à 18:15 UTC (19:15 CET en hiver / 20:15 CEST en été)
+    - cron: "15 18 * * *"
+  workflow_dispatch: # Permet de lancer le test manuellement d'un clic dans l'onglet Actions
+
+permissions:
+  contents: write
+
+jobs:
+  sync-csv:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Synchroniser cours.csv depuis Google Sheets
+        run: python scripts/sync_cours.py
+
+      - name: Commit et push si cours.csv a changé
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add cours.csv
+          if git diff --staged --quiet; then
+            echo "Aucun changement détecté sur cours.csv."
+          else
+            git commit -m "chore: mise à jour automatique cours.csv depuis Google Sheets"
+            git push
+          fi
