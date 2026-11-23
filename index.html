@@ -134,35 +134,34 @@
 
         <!-- ==================== TUILES DE BILAN REPLIABLES / DÉPLIABLES (EUR & CRYPTO USDC) ==================== -->
         <section class="mb-3.5">
-            <!-- ÉTAT REPLIÉ : Bandeau synthétique compact sur 2 lignes -->
+            <!-- ÉTAT REPLIÉ : Bandeau synthétique compact sur 2 lignes sans chevauchement -->
             <div id="summaryCompactView" data-action="toggle-summary"
-                class="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs px-3.5 py-2.5 cursor-pointer active:scale-[0.995] transition">
+                class="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs px-3 py-2 cursor-pointer active:scale-[0.995] transition">
                 <div class="flex items-center justify-between gap-2">
                     <div class="flex-1 min-w-0 divide-y divide-gray-100 pointer-events-none">
-                        <!-- Ligne 1 : Portefeuilles EUR -->
+                        <!-- Ligne 1 : EUR -->
                         <div class="flex items-center justify-between gap-2 pb-1.5">
-                            <div class="flex items-center gap-1.5 min-w-0">
-                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#007A63] shrink-0">Portefeuilles EUR</span>
-                                <span id="sumEurCompactCurrent" class="text-xs font-extrabold text-gray-900 whitespace-nowrap">0,00 €</span>
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#007A63] shrink-0">EUR</span>
+                            <div class="flex items-center justify-end gap-1.5 min-w-0">
+                                <span id="sumEurCompactCurrent" class="text-xs font-extrabold text-gray-900 whitespace-nowrap tabular-nums">0,00 €</span>
+                                <span id="sumEurCompactLatent" class="text-[11px] font-bold px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-700 whitespace-nowrap tabular-nums shrink-0">+0,00 € (0,00 %)</span>
                             </div>
-                            <span id="sumEurCompactLatent" class="text-[11px] font-bold text-gray-700 whitespace-nowrap shrink-0">+0,00 € (0,00 %)</span>
                         </div>
-                        <!-- Ligne 2 : Crypto USDC -->
+                        <!-- Ligne 2 : CRYPTO -->
                         <div class="flex items-center justify-between gap-2 pt-1.5">
-                            <div class="flex items-center gap-1.5 min-w-0">
-                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#007A63] shrink-0">Crypto USDC</span>
-                                <span id="sumUsdcCompactCurrent" class="text-xs font-extrabold text-gray-900 whitespace-nowrap">0,00 USDC</span>
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#007A63] shrink-0">CRYPTO</span>
+                            <div class="flex items-center justify-end gap-1.5 min-w-0">
+                                <span id="sumUsdcCompactCurrent" class="text-xs font-extrabold text-gray-900 whitespace-nowrap tabular-nums">0,00 USDC</span>
+                                <span id="sumUsdcCompactLatent" class="text-[11px] font-bold px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-700 whitespace-nowrap tabular-nums shrink-0">+0,00 USDC (0,00 %)</span>
                             </div>
-                            <span id="sumUsdcCompactLatent" class="text-[11px] font-bold text-gray-700 whitespace-nowrap shrink-0">+0,00 USDC (0,00 %)</span>
                         </div>
                     </div>
 
-                    <!-- Bouton / Chevron Déplier -->
-                    <div class="pl-1.5 shrink-0 flex flex-col items-center justify-center text-gray-400 pointer-events-none" aria-label="Déplier les tuiles">
-                        <svg class="w-4 h-4 text-[#007A63]" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                    <!-- Bouton chevron compact à droite -->
+                    <div class="w-6 h-6 rounded-lg bg-gray-50 border border-gray-100 shrink-0 flex items-center justify-center pointer-events-none" aria-label="Déplier les tuiles">
+                        <svg class="w-3.5 h-3.5 text-[#007A63]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                         </svg>
-                        <span class="text-[9px] font-bold text-gray-400 leading-none mt-0.5">Détails</span>
                     </div>
                 </div>
             </div>
@@ -2443,6 +2442,13 @@
                 const eurPerfCls = eurLatent > 0.004 ? "text-[#0D8A58]" : (eurLatent < -0.004 ? "text-[#D63638]" : "text-gray-700");
                 const usdcPerfCls = usdcLatent > 0.004 ? "text-[#0D8A58]" : (usdcLatent < -0.004 ? "text-[#D63638]" : "text-gray-700");
 
+                const eurPillCls = eurLatent > 0.004
+                    ? "bg-emerald-50 text-[#0D8A58]"
+                    : (eurLatent < -0.004 ? "bg-rose-50 text-[#D63638]" : "bg-gray-100 text-gray-700");
+                const usdcPillCls = usdcLatent > 0.004
+                    ? "bg-emerald-50 text-[#0D8A58]"
+                    : (usdcLatent < -0.004 ? "bg-rose-50 text-[#D63638]" : "bg-gray-100 text-gray-700");
+
                 // Bascule état replié / déplié des tuiles de bilan
                 const compactEl = document.getElementById("summaryCompactView");
                 const expandedEl = document.getElementById("summaryExpandedView");
@@ -2455,12 +2461,12 @@
                 document.getElementById("sumEurCompactCurrent").textContent = formatMoney(eurCur, "€");
                 const elEurCompactLatent = document.getElementById("sumEurCompactLatent");
                 elEurCompactLatent.textContent = `${formatMoney(eurLatent, "€", true)} (${formatPercent(eurPct)})`;
-                elEurCompactLatent.className = `text-[11px] font-bold whitespace-nowrap shrink-0 ${eurPerfCls}`;
+                elEurCompactLatent.className = `text-[11px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap tabular-nums shrink-0 ${eurPillCls}`;
 
                 document.getElementById("sumUsdcCompactCurrent").textContent = formatMoney(usdcCur, "USDC");
                 const elUsdcCompactLatent = document.getElementById("sumUsdcCompactLatent");
                 elUsdcCompactLatent.textContent = `${formatMoney(usdcLatent, "USDC", true)} (${formatPercent(usdcPct)})`;
-                elUsdcCompactLatent.className = `text-[11px] font-bold whitespace-nowrap shrink-0 ${usdcPerfCls}`;
+                elUsdcCompactLatent.className = `text-[11px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap tabular-nums shrink-0 ${usdcPillCls}`;
 
                 // État déplié (2 cartes complètes côte à côte)
                 document.getElementById("sumEurInvested").textContent = formatMoney(eurInv, "€");
